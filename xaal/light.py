@@ -1,0 +1,91 @@
+import logging
+
+from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity)
+from homeassistant.util import color as color_util
+
+from .const import DOMAIN
+from .core import XAALEntity
+
+_LOGGER = logging.getLogger(__name__)
+
+async def async_setup_entry(hass, config_entry, async_add_entities ):
+    bridge = hass.data[DOMAIN][config_entry.entry_id]
+    for dev in bridge._mon.devices:
+        if dev.dev_type.startswith('lamp.'):
+            entity = Lamp(dev,bridge)
+            async_add_entities([entity])
+            bridge.add_entity(dev.address, entity)
+
+class Lamp(XAALEntity, LightEntity):
+
+    @property
+    def supported_color_modes(self) -> str:
+        dev_type = self._dev.dev_type
+        if dev_type in ['lamp.color']:
+            return {"brightness", "hs", "color_temp"}
+        if dev_type in ['lamp.dimmer']:
+            return {"brightness"}
+
+    @property
+    def unique_id(self) -> str:
+        return f'light.{str(self._dev.address)}'
+
+    @property
+    def color_mode(self):
+        mode = self._dev.attributes.get('mode', None)
+        if mode == 'white':
+            return 'color_temp'
+        elif mode == 'color':
+            return 'hs'
+        # FIXME: xAAL don't have this kind of lamp
+        return 'brightness'
+
+    @property
+    def brightness(self):
+        brightness = self._dev.attributes.get('brightness', 0)
+        return round(255 * (int(brightness) / 100))
+
+    @property
+    def hs_color(self):
+        hsv = self._dev.attributes.get('hsv',None)
+        if hsv:
+            return (hsv[0], hsv[1]*100)
+
+    @property
+    def color_temp(self) -> int | None:
+        white_temp = self._dev.attributes.get('white_temperature', None)
+        if white_temp:
+            return color_util.color_temperature_kelvin_to_mired(white_temp)
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._dev.attributes.get('light',None)
+
+    def turn_on(self, **kwargs) -> None:
+        _LOGGER.debug(f"turn_on: {kwargs}")
+        color      = kwargs.get(ATTR_HS_COLOR,None)
+        brightness = kwargs.get(ATTR_BRIGHTNESS,None)
+        color_temp = kwargs.get(ATTR_COLOR_TEMP,None)
+
+        # FIX: support duration
+        #duration   = kwargs.get('duration',None)
+
+        if color_temp:
+            white_temp = color_util.color_temperature_mired_to_kelvin(color_temp)
+            self.send_request('set_white_temperature', {'white_temperature': white_temp})
+
+        if brightness:
+            brightness = int(brightness / 255 * 100)
+            self.send_request('set_brightness', {'brightness': brightness})
+
+        if color:
+            h = int(color[0])
+            s = color[1] / 100
+            v = self._dev.attributes.get('brightness', 100) / 100
+            self.send_request('set_hsv', {'hsv': [h, s, v]})
+
+        if not self.is_on:
+            self.send_request('turn_on')
+
+    def turn_off(self, **kwargs) -> None:
+        self.send_request('turn_off')
