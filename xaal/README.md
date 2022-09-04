@@ -11,3 +11,13 @@ A bridge to provide access to xAAL Bus in Home-Assistant
 ##Install:
 Simply copy the xaal folder in the Home-Assistant custom-component folder. Go
 to configuration/integration panel and add xAAL. That's all.
+
+
+##Notes:
+Hass does some strange things with entity.unique_id, entity_name and so on.
+Read carefully : 
+- entity.unique_id is a "xaal." + device.address 
+- entity_name is xAAL name/nickname OR a short-string-from-address (Monitor.display_name)
+- entity_id (used in UI, script and so on) is build from unique_id or entity_name if provided
+- changes in xAAL nickname only affect entity_name, entity_id will not change. This is the 
+  way HASS works. 
