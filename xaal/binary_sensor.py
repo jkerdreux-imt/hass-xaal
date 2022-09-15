@@ -1,3 +1,4 @@
+from xaal.lib import helpers
 import logging
 import functools
 
@@ -5,93 +6,84 @@ from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySen
 from homeassistant.const import STATE_ON, STATE_OFF
 
 from .const import DOMAIN
-from .core import XAALEntity
+from .core import XAALEntity, EntryHandler
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities ):
-    bridge = hass.data[DOMAIN][config_entry.entry_id]
-    for dev in bridge._mon.devices:
+class Handler(EntryHandler):
+
+    def new_entity(self, device):
         entity = None
 
-        if dev.dev_type.startswith('motion.'):
-            entity = Motion(dev,bridge)
+        if device.dev_type.startswith('motion.'):
+            entity = Motion(device, self._bridge)
 
-        if dev.dev_type.startswith('contact.'):
-            entity = Contact(dev,bridge)
+        if device.dev_type.startswith('contact.'):
+            entity = Contact(device, self._bridge)
 
-        if dev.dev_type.startswith('switch.'):
-            entity = Switch(dev,bridge)
+        if device.dev_type.startswith('switch.'):
+            entity = Switch(device, self._bridge)
 
-        if dev.dev_type.startswith('button.'):
-            entity = Button(dev,bridge)
+        if device.dev_type.startswith('button.'):
+            entity = Button(device, self._bridge)
 
         if entity:
-            async_add_entities([entity])
-            bridge.add_entity(dev.address, entity)
-
-    ptr = functools.partial(buttons_handler,bridge)
-    bridge._eng.subscribe(ptr)
+            self.add_entity(entity, device.address)
+            return True
+        return False
 
 
-def buttons_handler(bridge,msg):
-    if msg.dev_type.startswith('button.'):
-        entity = bridge._entities.get(msg.source, None)
-        if entity:
-            entity.fire_event("xaal.click")
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    bridge = hass.data[DOMAIN][config_entry.entry_id]
+    handler = Handler(bridge, async_add_entities)
+    for dev in bridge._mon.devices:
+        handler.new_entity(dev)
 
 
-class Motion(XAALEntity,  BinarySensorEntity):
-    device_class = BinarySensorDeviceClass.MOTION
-    
-    @property
-    def unique_id(self) -> str:
-        return f'binary_sensor.{str(self._dev.address)}_motion'
+class Motion(XAALEntity, BinarySensorEntity):
+    _attr_device_class = BinarySensorDeviceClass.MOTION
 
     @property
     def state(self):
-        value =self._dev.attributes.get('presence',None) 
+        value = self._dev.attributes.get('presence', None)
         return STATE_ON if value else STATE_OFF
 
 
-class Contact(XAALEntity,  BinarySensorEntity):
-    device_class = BinarySensorDeviceClass.OPENING
-    
-    @property
-    def unique_id(self) -> str:
-        return f'binary_sensor.{str(self._dev.address)}_contact'
+class Contact(XAALEntity, BinarySensorEntity):
+    _attr_device_class = BinarySensorDeviceClass.OPENING
 
     @property
     def state(self):
-        value = self._dev.attributes.get('detected',None)
-        #return STATE_OPEN if value else STATE_CLOSED
+        value = self._dev.attributes.get('detected', None)
+        # return STATE_OPEN if value else STATE_CLOSED
         return STATE_ON if value else STATE_OFF
 
 
-class Switch(XAALEntity,  BinarySensorEntity):
-    
-    @property
-    def unique_id(self) -> str:
-        return f'binary_sensor.{str(self._dev.address)}_switch'
+class Switch(XAALEntity, BinarySensorEntity):
+    _attr_device_class = BinarySensorDeviceClass.POWER
 
     @property
     def state(self):
-        value = self._dev.attributes.get('position',None)
-        #return STATE_OPEN if value else STATE_CLOSED
+        value = self._dev.attributes.get('position', None)
+        # return STATE_OPEN if value else STATE_CLOSED
         return STATE_ON if value else STATE_OFF
 
 
-class Button(XAALEntity,  BinarySensorEntity):
-    
-    @property
-    def unique_id(self) -> str:
-        return f'binary_sensor.{str(self._dev.address)}_button'
+class Button(XAALEntity, BinarySensorEntity):
 
     @property
     def state(self):
         return False
 
-    def fire_event(self,event):
-        _LOGGER.warning(f"Button event: {event} {self.entity_id}")
-        self.hass.bus.fire("xaal_event", {'entity_id': self.entity_id, "click_type": "single"})
+    def click_event(self, click_type):
+        # TODO change this sig, to hande several button types..
+        _LOGGER.warning(f"Button event: {self.entity_id}")
+        self.hass.bus.fire("xaal_event", {'entity_id': self.entity_id, "click_type": click_type})
+
+
+    def handle_notification(self, msg):
+        if msg.action == 'click':
+            self.click_event('single')
+        if msg.action == 'double_click':
+            self.click_event('double')

@@ -1,20 +1,31 @@
 import logging
 
-from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity)
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity)
 from homeassistant.util import color as color_util
 
 from .const import DOMAIN
-from .core import XAALEntity
+from .core import XAALEntity, EntryHandler
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, config_entry, async_add_entities ):
+
+class Handler(EntryHandler):
+
+    def new_entity(self, device):
+        if device.dev_type.startswith('lamp.'):
+            entity = Lamp(device, self._bridge)
+            self.add_entity(entity,device.address)
+            return True
+        return False
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
     bridge = hass.data[DOMAIN][config_entry.entry_id]
+    handler = Handler(bridge, async_add_entities)
     for dev in bridge._mon.devices:
-        if dev.dev_type.startswith('lamp.'):
-            entity = Lamp(dev,bridge)
-            async_add_entities([entity])
-            bridge.add_entity(dev.address, entity)
+        handler.new_entity(dev)
+
 
 class Lamp(XAALEntity, LightEntity):
 
@@ -26,9 +37,9 @@ class Lamp(XAALEntity, LightEntity):
         if dev_type in ['lamp.dimmer']:
             return {"brightness"}
 
-    @property
-    def unique_id(self) -> str:
-        return f'light.{str(self._dev.address)}'
+    # @property
+    # def unique_id(self) -> str:
+    #     return f'light.{str(self._dev.address)}'
 
     @property
     def color_mode(self):
@@ -47,7 +58,7 @@ class Lamp(XAALEntity, LightEntity):
 
     @property
     def hs_color(self):
-        hsv = self._dev.attributes.get('hsv',None)
+        hsv = self._dev.attributes.get('hsv', None)
         if hsv:
             return (hsv[0], hsv[1]*100)
 
@@ -59,20 +70,21 @@ class Lamp(XAALEntity, LightEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._dev.attributes.get('light',None)
+        return self._dev.attributes.get('light', None)
 
     def turn_on(self, **kwargs) -> None:
-        _LOGGER.debug(f"turn_on: {kwargs}")
-        color      = kwargs.get(ATTR_HS_COLOR,None)
-        brightness = kwargs.get(ATTR_BRIGHTNESS,None)
-        color_temp = kwargs.get(ATTR_COLOR_TEMP,None)
+        color = kwargs.get(ATTR_HS_COLOR, None)
+        brightness = kwargs.get(ATTR_BRIGHTNESS, None)
+        color_temp = kwargs.get(ATTR_COLOR_TEMP, None)
 
         # FIX: support duration
-        #duration   = kwargs.get('duration',None)
+        # duration   = kwargs.get('duration',None)
 
         if color_temp:
-            white_temp = color_util.color_temperature_mired_to_kelvin(color_temp)
-            self.send_request('set_white_temperature', {'white_temperature': white_temp})
+            white_temp = color_util.color_temperature_mired_to_kelvin(
+                color_temp)
+            self.send_request('set_white_temperature', {
+                              'white_temperature': white_temp})
 
         if brightness:
             brightness = int(brightness / 255 * 100)
@@ -84,8 +96,8 @@ class Lamp(XAALEntity, LightEntity):
             v = self._dev.attributes.get('brightness', 100) / 100
             self.send_request('set_hsv', {'hsv': [h, s, v]})
 
-        if not self.is_on:
-            self.send_request('turn_on')
+        # if not self.is_on:
+        self.send_request('turn_on')
 
     def turn_off(self, **kwargs) -> None:
         self.send_request('turn_off')
