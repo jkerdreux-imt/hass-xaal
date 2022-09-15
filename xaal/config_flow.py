@@ -3,7 +3,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 import logging
 
-from . import bridge
+# from . import bridge
 
 from .const import DOMAIN  # pylint:disable=unused-import
 
@@ -21,10 +21,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # no user input right now, so we just show the empty form
         errors = {}
 
-        #br = bridge.Bridge(self.hass)
-        #r = await br.wait_is_ready()
-        #print(f"READY={r}")
-        #br.engine.stop()
+        # br = bridge.Bridge(self.hass)
+        # r = await br.wait_is_ready()
+        # print(f"READY={r}")
+        # br.engine.stop()
 
         # if we have some user_input let's start
         if user_input is not None:
