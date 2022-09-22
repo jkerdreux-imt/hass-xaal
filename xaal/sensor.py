@@ -2,11 +2,7 @@ import logging
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 
-from homeassistant.const import (
-    TEMP_CELSIUS,
-    PERCENTAGE,
-    POWER_WATT,
-)
+from homeassistant import const
 
 from .core import XAALEntity, EntityFactory, async_setup_factory
 
@@ -37,6 +33,9 @@ class Factory(EntityFactory):
         if device.dev_type.startswith('wifimeter.'):
             entity = WifiMeter(device, self._bridge)
 
+        if device.dev_type.startswith('luxmeter.'):
+            entity = LuxMeter(device, self._bridge)
+
         if entity:
             self.add_entity(entity, device.address)
             return True
@@ -53,29 +52,34 @@ class XAALSensorEntity(XAALEntity, SensorEntity):
 
 class Thermometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = TEMP_CELSIUS
+    _attr_native_unit_of_measurement = const.TEMP_CELSIUS
     _xaal_attribute = 'temperature'
 
 
 class Hygrometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.HUMIDITY
-    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_unit_of_measurement = const.PERCENTAGE
     _xaal_attribute = 'humidity'
 
 
 class Battery(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_unit_of_measurement = PERCENTAGE
+    _attr_unit_of_measurement = const.PERCENTAGE
     _xaal_attribute = 'level'
 
 
 class PowerMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
-    _attr_native_unit_of_measurement = POWER_WATT
+    _attr_native_unit_of_measurement = const.POWER_WATT
     _xaal_attribute = 'power'
 
 
 class WifiMeter(XAALSensorEntity):
-    _attr_device_class: SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_device_class= SensorDeviceClass.SIGNAL_STRENGTH
     _xaal_attribute = 'rssi'
 
+
+class LuxMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.ILLUMINANCE
+    _attr_native_unit_of_measurement = const.LIGHT_LUX
+    _xaal_attribute = 'illuminance'
