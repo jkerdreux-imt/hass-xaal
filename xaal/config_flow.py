@@ -29,7 +29,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # if we have some user_input let's start
         if user_input is not None:
             try:
-                return self.async_create_entry(title="Bridge", data=user_input)
+                return self.async_create_entry(title="xAAL Bridge", data=user_input)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"

@@ -5,12 +5,12 @@ from homeassistant.components.light import (
 from homeassistant.util import color as color_util
 
 from .const import DOMAIN
-from .core import XAALEntity, EntryHandler
+from .core import XAALEntity, EntityFactory
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Handler(EntryHandler):
+class Factory(EntityFactory):
 
     def new_entity(self, device):
         if device.dev_type.startswith('lamp.'):
@@ -22,9 +22,10 @@ class Handler(EntryHandler):
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     bridge = hass.data[DOMAIN][config_entry.entry_id]
-    handler = Handler(bridge, async_add_entities)
+    factory = Factory(bridge, async_add_entities)
     for dev in bridge._mon.devices:
-        handler.new_entity(dev)
+        if dev.is_ready():
+            factory.new_entity(dev)
 
 
 class Lamp(XAALEntity, LightEntity):
@@ -36,10 +37,6 @@ class Lamp(XAALEntity, LightEntity):
             return {"brightness", "hs", "color_temp"}
         if dev_type in ['lamp.dimmer']:
             return {"brightness"}
-
-    # @property
-    # def unique_id(self) -> str:
-    #     return f'light.{str(self._dev.address)}'
 
     @property
     def color_mode(self):

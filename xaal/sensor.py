@@ -8,17 +8,14 @@ from homeassistant.const import (
     POWER_WATT,
 )
 
-
 from .const import DOMAIN
-from .core import XAALEntity, EntryHandler
+from .core import XAALEntity, EntityFactory
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-
-
-class Handler(EntryHandler):
+class Factory(EntityFactory):
 
     def new_entity(self, device):
         entity = None
@@ -45,14 +42,15 @@ class Handler(EntryHandler):
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     bridge = hass.data[DOMAIN][config_entry.entry_id]
-    handler = Handler(bridge, async_add_entities)
+    factory = Factory(bridge, async_add_entities)
     for dev in bridge._mon.devices:
-        handler.new_entity(dev)
+        if dev.is_ready():
+            factory.new_entity(dev)
 
 
 class Thermometer(XAALEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_unit_of_measurement = TEMP_CELSIUS
+    _attr_native_unit_of_measurement = TEMP_CELSIUS
 
     @property
     def state(self):
@@ -61,7 +59,7 @@ class Thermometer(XAALEntity, SensorEntity):
 
 class Hygrometer(XAALEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.HUMIDITY
-    _attr_unit_of_measurement = PERCENTAGE
+    _attr_native_unit_of_measurement = PERCENTAGE
 
     @property
     def state(self):
@@ -79,7 +77,7 @@ class Battery(XAALEntity, SensorEntity):
 
 class PowerMeter(XAALEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
-    _attr_unit_of_measurement = POWER_WATT
+    _attr_native_unit_of_measurement = POWER_WATT
 
     @property
     def state(self):

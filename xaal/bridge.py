@@ -11,24 +11,15 @@ _LOGGER = logging.getLogger(__name__)
 
 #DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
 DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
-# DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
+
+UNSUPPORTED_TYPES = ['cli','hmi','windgauge','barometer','co2meter','soundmeter']
 
 
 def filter_msg(msg):
-    if msg.source == DB_SERVER:
-        return True
-    if msg.dev_type.startswith('lamp.'):
-        return True
-    if msg.dev_type.startswith('powerrelay.'):
-        return True
-    if msg.dev_type.startswith('thermometer.'):
-        return True
-    if msg.dev_type.startswith('hygrometer.'):
-        return True
-    if msg.dev_type.startswith('battery.'):
-        return True
-
-    return False
+    m_type = msg.dev_type.split('.')[0]
+    if m_type in UNSUPPORTED_TYPES:
+        return False
+    return True
 
 
 class Bridge(object):
@@ -38,12 +29,12 @@ class Bridge(object):
         self._hass = hass
         self._eng = AsyncEngine()
         self._dev = self.setup_device()
-        self._mon = Monitor(self._dev, db_server=DB_SERVER)
-        self._eng.start()
+        self._mon = Monitor(self._dev, filter_msg, db_server=DB_SERVER)
         self._eng.on_start(self.on_start)
         self._eng.on_stop(self.on_stop)
+        self._eng.start()
         self._entities = {}
-        self._handlers = []
+        self._factories = []
 
     @property
     def engine(self):
@@ -51,15 +42,16 @@ class Bridge(object):
 
     async def on_start(self):
         _LOGGER.warning(f"{self._eng} started")
-        await self.wait_is_ready()
+        #await self.wait_is_ready()
         print("Subscribing..")
         self._mon.subscribe(self.monitor_event)
-        self._eng.subscribe(self.notification_handler)
+        self._eng.subscribe(self.monitor_notification)
 
     def on_stop(self):
         _LOGGER.warning(f"{self._eng} stopped")
 
     def add_entity(self, addr, entity):
+        _LOGGER.warning(f"new Entity {addr} {entity}")
         self._entities.update({addr: entity})
 
     def remove_entity(self, addr):
@@ -68,18 +60,19 @@ class Bridge(object):
     def get_entity(self, addr):
         return self._entities.get(addr, None)
 
-    def add_handler(self,handler):
-        print(handler)
-        self._handlers.append(handler)
+    def add_factory(self, klass):
+        self._factories.append(klass)
 
-    def remove_handler(self,handler):
-        self._handlers.remove(handler)
+    def remove_factory(self, klass):
+        self._factories.remove(klass)
 
     def setup_device(self):
         dev = schemas.hmi()
         dev.dev_type = 'hmi.hass'
         dev.vendor_id = 'IMT Atlantique'
         dev.product_id = 'xAAL to HASS Brigde'
+        # never use this terrible hack to gain access to brigde throught aioconsole
+        #dev.new_attribute('bridge',self)
         self._eng.add_device(dev)
         return dev
 
@@ -90,27 +83,29 @@ class Bridge(object):
         while 1:
             if self._mon.boot_finished:
                 return True
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
         return False
 
     def monitor_event(self, event, dev):
         entity = self.get_entity(dev.address)
+        #_LOGGER.debug(f"{event} {dev.address} {dev.is_ready()} => {entity}")
 
-        if entity is None:
-            for h in self._handlers:
+        # WARNING, never call ha_state update on a newly created entity, 
+        # hass will block on this task (tricks: asyncio.sleep can fix that)
+        if entity and (event == Notification.attribute_change):
+            _LOGGER.debug(f"{event} {dev.address} => {entity}")
+            entity.schedule_update_ha_state()
+            return
+
+        if entity is None and dev.is_ready():
+            for h in self._factories:
                 r = h.new_entity(dev)
                 if r:
-                    _LOGGER.debug(f"New entity for {dev.address}")
-                    return
-            _LOGGER.warning(f"Unable to find handler for {dev.address}")
-            return
+                    self.get_entity(dev.address)
+                    _LOGGER.info(f"New entity for {dev.address}")
 
-        if event in [Notification.attribute_change, Notification.metadata_change]:
-            _LOGGER.debug(f"{event} {entity}")
-            entity.async_write_ha_state()
-            return
 
-    def notification_handler(self, msg):
+    def monitor_notification(self, msg):
         # right now the monitor doesn't send event on notification, so the bridge deals w/
         # both monitor events & messages.
         if (not msg.is_notify()) or msg.is_alive() or msg.is_attributes_change():
@@ -119,4 +114,3 @@ class Bridge(object):
         if entity and hasattr(entity, 'handle_notification'):
             msg.dump()
             entity.handle_notification(msg)
-

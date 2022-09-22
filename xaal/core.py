@@ -16,7 +16,7 @@ class XAALEntity(Entity):
 
     @property
     def device_info(self):
-        print(f"DB: {self.unique_id} {self._dev.db}")
+        #print(f"DB: {self.unique_id} {self._dev.db}")
         dev = self._dev
         ident = "dev:" + str(dev.address)
 
@@ -24,7 +24,7 @@ class XAALEntity(Entity):
         if group_id:
             ident = "grp:" + str(group_id)
 
-        _LOGGER.warning(ident)
+        #_LOGGER.warning(ident)
 
         return {
             "identifiers": {(DOMAIN, ident)},
@@ -65,22 +65,13 @@ class XAALEntity(Entity):
         addr = str(self._dev.address).replace('-', '_')
         return f"xaal.{addr}"
 
-    # @property
-    # def entity_id(self) -> str | None:
-    #     return self.unique_id
 
-    # @entity_id.setter
-    # def entity_id(self, value):
-    #     _LOGGER.warning(f"entity_id setter {value}")
-
-
-
-class EntryHandler(object):
+class EntityFactory(object):
 
     def __init__(self, bridge, async_add_entitites):
         self._bridge = bridge
         self._async_add_entitites = async_add_entitites
-        self._bridge.add_handler(self)
+        self._bridge.add_factory(self)
 
 
     def add_entity(self, entity, address):
