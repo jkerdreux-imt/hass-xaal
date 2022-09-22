@@ -72,10 +72,8 @@ class Lamp(XAALEntity, LightEntity):
         # duration   = kwargs.get('duration',None)
 
         if color_temp:
-            white_temp = color_util.color_temperature_mired_to_kelvin(
-                color_temp)
-            self.send_request('set_white_temperature', {
-                              'white_temperature': white_temp})
+            white_temp = color_util.color_temperature_mired_to_kelvin(color_temp)
+            self.send_request('set_white_temperature', {'white_temperature': white_temp})
 
         if brightness:
             brightness = int(brightness / 255 * 100)
