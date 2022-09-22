@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 #DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
 DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 
-UNSUPPORTED_TYPES = ['cli','hmi','windgauge','barometer','co2meter','soundmeter']
+UNSUPPORTED_TYPES = ['cli','hmi','gateway','windgauge','barometer','co2meter','soundmeter']
 
 
 def filter_msg(msg):
@@ -41,17 +41,17 @@ class Bridge(object):
         return self._eng
 
     async def on_start(self):
-        _LOGGER.warning(f"{self._eng} started")
+        _LOGGER.info(f"{self._eng} started")
         #await self.wait_is_ready()
         print("Subscribing..")
         self._mon.subscribe(self.monitor_event)
         self._eng.subscribe(self.monitor_notification)
 
     def on_stop(self):
-        _LOGGER.warning(f"{self._eng} stopped")
+        _LOGGER.info(f"{self._eng} stopped")
 
     def add_entity(self, addr, entity):
-        _LOGGER.warning(f"new Entity {addr} {entity}")
+        _LOGGER.debug(f"new Entity {addr} {entity}")
         self._entities.update({addr: entity})
 
     def remove_entity(self, addr):
@@ -98,11 +98,14 @@ class Bridge(object):
             return
 
         if entity is None and dev.is_ready():
+            cnt = 0
             for h in self._factories:
                 r = h.new_entity(dev)
                 if r:
-                    self.get_entity(dev.address)
-                    _LOGGER.info(f"New entity for {dev.address}")
+                    #_LOGGER.info(f"New entity for {dev.address}")
+                    cnt = cnt + 1
+            if cnt==0:
+                _LOGGER.warning(f"Unable to find entity for {dev.address} {dev.dev_type} ")
 
 
     def monitor_notification(self, msg):
