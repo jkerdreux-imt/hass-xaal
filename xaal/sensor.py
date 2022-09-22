@@ -1,6 +1,6 @@
 import logging
 
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 
 from homeassistant.const import (
     TEMP_CELSIUS,
@@ -8,11 +8,14 @@ from homeassistant.const import (
     POWER_WATT,
 )
 
-from .const import DOMAIN
-from .core import XAALEntity, EntityFactory
+from .core import XAALEntity, EntityFactory, async_setup_factory
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 
 class Factory(EntityFactory):
@@ -40,53 +43,39 @@ class Factory(EntityFactory):
         return False
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    bridge = hass.data[DOMAIN][config_entry.entry_id]
-    factory = Factory(bridge, async_add_entities)
-    for dev in bridge._mon.devices:
-        if dev.is_ready():
-            factory.new_entity(dev)
+class XAALSensorEntity(XAALEntity, SensorEntity):
+
+    @property
+    def native_value(self):
+        target = getattr(self,'_xaal_attribute')
+        return self._dev.attributes.get(target,None)
 
 
-class Thermometer(XAALEntity, SensorEntity):
+class Thermometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = TEMP_CELSIUS
-
-    @property
-    def state(self):
-        return self._dev.attributes.get('temperature', None)
+    _xaal_attribute = 'temperature'
 
 
-class Hygrometer(XAALEntity, SensorEntity):
+class Hygrometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_native_unit_of_measurement = PERCENTAGE
-
-    @property
-    def state(self):
-        return self._dev.attributes.get('humidity', None)
+    _xaal_attribute = 'humidity'
 
 
-class Battery(XAALEntity, SensorEntity):
+class Battery(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_unit_of_measurement = PERCENTAGE
-
-    @property
-    def state(self):
-        return self._dev.attributes.get('level', None)
+    _xaal_attribute = 'level'
 
 
-class PowerMeter(XAALEntity, SensorEntity):
+class PowerMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = POWER_WATT
-
-    @property
-    def state(self):
-        return self._dev.attributes.get('power', None)
+    _xaal_attribute = 'power'
 
 
-class WifiMeter(XAALEntity, SensorEntity):
+class WifiMeter(XAALSensorEntity):
     _attr_device_class: SensorDeviceClass.SIGNAL_STRENGTH
+    _xaal_attribute = 'rssi'
 
-    @property
-    def state(self):
-        return self._dev.attributes.get('rssi', None)

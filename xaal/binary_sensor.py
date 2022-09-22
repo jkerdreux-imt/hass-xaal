@@ -1,14 +1,14 @@
-from xaal.lib import helpers
 import logging
-import functools
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.const import STATE_ON, STATE_OFF
 
-from .const import DOMAIN
-from .core import XAALEntity, EntityFactory
+from .core import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 
 class Factory(EntityFactory):
@@ -34,54 +34,39 @@ class Factory(EntityFactory):
         return False
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    bridge = hass.data[DOMAIN][config_entry.entry_id]
-    factory = Factory(bridge, async_add_entities)
-    for dev in bridge._mon.devices:
-        if dev.is_ready():
-            factory.new_entity(dev)
+class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
+
+    @property
+    def state(self):
+        try:
+            attr = getattr(self,'_xaal_attribute')
+            value = self._dev.attributes.get('presence', None)
+            return STATE_ON if value else STATE_OFF
+        except:
+            return None
 
 
-class Motion(XAALEntity, BinarySensorEntity):
+class Motion(XAALBinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.MOTION
-
-    @property
-    def state(self):
-        value = self._dev.attributes.get('presence', None)
-        return STATE_ON if value else STATE_OFF
+    _xaal_attribute = 'presence'
 
 
-class Contact(XAALEntity, BinarySensorEntity):
+class Contact(XAALBinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.OPENING
-
-    @property
-    def state(self):
-        value = self._dev.attributes.get('detected', None)
-        # return STATE_OPEN if value else STATE_CLOSED
-        return STATE_ON if value else STATE_OFF
+    _xaal_attribute = 'detected'
 
 
-class Switch(XAALEntity, BinarySensorEntity):
+class Switch(XAALBinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.POWER
-
-    @property
-    def state(self):
-        value = self._dev.attributes.get('position', None)
-        # return STATE_OPEN if value else STATE_CLOSED
-        return STATE_ON if value else STATE_OFF
+    _xaal_attribute = 'position'
 
 
-class Button(XAALEntity, BinarySensorEntity):
-
-    @property
-    def state(self):
-        return False
+class Button(XAALBinarySensorEntity):
 
     def click_event(self, click_type):
         # TODO change this sig, to hande several button types..
         _LOGGER.warning(f"Button event: {self.entity_id}")
         self.hass.bus.fire("xaal_event", {'entity_id': self.entity_id, "click_type": click_type})
-
 
     def handle_notification(self, msg):
         if msg.action == 'click':

@@ -3,6 +3,7 @@ from .const import DOMAIN
 
 from homeassistant.helpers.entity import Entity
 
+
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,21 +47,21 @@ class XAALEntity(Entity):
         # NOTE: I don't know why some entities don't have a device class
         return self._dev.dev_type.split('.')[0]
 
-    @ property
+    @property
     def available(self) -> bool:
         return True
 
-    @ property
+    @property
     def should_poll(self):
         """No polling needed."""
         return False
 
-    @ property
+    @property
     def name(self) -> str | None:
         dev_class = self.device_class or self.short_type()
         return f"{dev_class} {self._dev.display_name}"
 
-    @ property
+    @property
     def unique_id(self) -> str:
         addr = str(self._dev.address).replace('-', '_')
         return f"xaal.{addr}"
@@ -77,3 +78,11 @@ class EntityFactory(object):
     def add_entity(self, entity, address):
         self._async_add_entitites([entity])
         self._bridge.add_entity(address, entity)
+
+
+def async_setup_factory(hass, config_entry, async_add_entities, factory_class):
+    bridge = hass.data[DOMAIN][config_entry.entry_id]
+    factory = factory_class(bridge, async_add_entities)
+    for dev in bridge._mon.devices:
+        if dev.is_ready():
+            factory.new_entity(dev)

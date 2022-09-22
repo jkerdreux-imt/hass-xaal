@@ -1,13 +1,15 @@
 import logging
 
-from homeassistant.components.light import (
-    ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity)
+from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity
 from homeassistant.util import color as color_util
 
-from .const import DOMAIN
-from .core import XAALEntity, EntityFactory
+from .core import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 
 class Factory(EntityFactory):
@@ -18,14 +20,6 @@ class Factory(EntityFactory):
             self.add_entity(entity,device.address)
             return True
         return False
-
-
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    bridge = hass.data[DOMAIN][config_entry.entry_id]
-    factory = Factory(bridge, async_add_entities)
-    for dev in bridge._mon.devices:
-        if dev.is_ready():
-            factory.new_entity(dev)
 
 
 class Lamp(XAALEntity, LightEntity):
