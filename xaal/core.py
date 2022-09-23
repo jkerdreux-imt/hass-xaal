@@ -17,7 +17,6 @@ class XAALEntity(Entity):
 
     @property
     def device_info(self):
-        #print(f"DB: {self.unique_id} {self._dev.db}")
         dev = self._dev
         ident = "dev:" + str(dev.address)
 
@@ -40,6 +39,9 @@ class XAALEntity(Entity):
     def send_request(self, action, body=None):
         _LOGGER.debug(f"{self} {action} {body}")
         self._bridge.send_request([self._dev.address, ], action, body)
+
+    def get_attribute(self, name, default=None):
+        return self._dev.attributes.get(name, default)
 
     def short_type(self):
         """ return a fake device class for entity that doesn't have one """

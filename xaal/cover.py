@@ -58,25 +58,25 @@ class ShutterPosition(Shutter):
 
     @property
     def is_closed(self) -> bool | None:
-        if self._dev.attributes.get('position', None) == 0:
+        if self.get_attribute('position') == 0:
             return True
         return False
 
     @property
     def is_closing(self) -> bool | None:
-        if self._dev.attributes.get('action',None) == 'down':
+        if self.get_attribute('action') == 'down':
             return True
         return False
     
     @property
     def is_opening(self) -> bool | None:
-        if self._dev.attributes.get('action',None) == 'up':
+        if self.get_attribute('action') == 'up':
             return True
         return False
 
     @property
     def current_cover_position(self) -> int | None:
-        return self._dev.attributes.get('position',None)
+        return self.get_attribute('position')
 
     def set_cover_position(self, **kwargs: Any) -> None:
         position = kwargs.get(ATTR_POSITION, None)

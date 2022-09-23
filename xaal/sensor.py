@@ -47,7 +47,7 @@ class XAALSensorEntity(XAALEntity, SensorEntity):
     @property
     def native_value(self):
         target = getattr(self,'_xaal_attribute')
-        return self._dev.attributes.get(target,None)
+        return self.get_attribute(target)
 
 
 class Thermometer(XAALSensorEntity):

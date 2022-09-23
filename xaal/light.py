@@ -34,7 +34,7 @@ class Lamp(XAALEntity, LightEntity):
 
     @property
     def color_mode(self):
-        mode = self._dev.attributes.get('mode', None)
+        mode = self.get_attribute('mode')
         if mode == 'white':
             return 'color_temp'
         elif mode == 'color':
@@ -44,24 +44,24 @@ class Lamp(XAALEntity, LightEntity):
 
     @property
     def brightness(self):
-        brightness = self._dev.attributes.get('brightness', 0)
+        brightness = self.get_attribute('brightness',0)
         return round(255 * (int(brightness) / 100))
 
     @property
     def hs_color(self):
-        hsv = self._dev.attributes.get('hsv', None)
+        hsv = self.get_attribute('hsv')
         if hsv:
             return (hsv[0], hsv[1]*100)
 
     @property
     def color_temp(self) -> int | None:
-        white_temp = self._dev.attributes.get('white_temperature', None)
+        white_temp = self.get_attribute('white_temperature')
         if white_temp:
             return color_util.color_temperature_kelvin_to_mired(white_temp)
 
     @property
     def is_on(self) -> bool | None:
-        return self._dev.attributes.get('light', None)
+        return self.get_attribute('light')
 
     def turn_on(self, **kwargs) -> None:
         color = kwargs.get(ATTR_HS_COLOR, None)
@@ -82,7 +82,7 @@ class Lamp(XAALEntity, LightEntity):
         if color:
             h = int(color[0])
             s = color[1] / 100
-            v = self._dev.attributes.get('brightness', 100) / 100
+            v = self.get_attribute('brightness', 100) / 100
             self.send_request('set_hsv', {'hsv': [h, s, v]})
 
         # if not self.is_on:

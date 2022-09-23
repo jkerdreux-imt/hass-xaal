@@ -26,7 +26,7 @@ class PowerRelay(XAALEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._dev.attributes.get('power', None)
+        return self.get_attribute('power')
 
     def turn_on(self, **kwargs) -> None:
         _LOGGER.debug(f"turn_on: {kwargs}")

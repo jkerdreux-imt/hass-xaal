@@ -40,7 +40,7 @@ class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
     def state(self):
         try:
             attr = getattr(self,'_xaal_attribute')
-            value = self._dev.attributes.get(attr, None)
+            value = self.get_attribute(attr)
             return STATE_ON if value else STATE_OFF
         except:
             return None
