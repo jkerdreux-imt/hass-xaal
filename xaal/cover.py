@@ -18,10 +18,10 @@ class Factory(EntityFactory):
     def new_entity(self, device):
         entity = None
         
-        if device.dev_type.startswith('shutter.basic'):
+        if device.dev_type == 'shutter.basic':
             entity = Shutter(device, self._bridge)
 
-        if device.dev_type.startswith('shutter.position'):
+        if device.dev_type == 'shutter.position':
             entity = ShutterPosition(device, self._bridge)
 
         if entity:
@@ -35,13 +35,7 @@ class Shutter(XAALEntity, CoverEntity):
 
     @property
     def supported_features(self) -> int:
-        supported_features = 0
-        supported_features |= (
-                CoverEntityFeature.OPEN
-                | CoverEntityFeature.CLOSE
-                | CoverEntityFeature.STOP
-            )
-        return supported_features
+        return CoverEntityFeature.OPEN|CoverEntityFeature.CLOSE|CoverEntityFeature.STOP
 
     @property
     def is_closed(self) -> bool | None:
@@ -60,14 +54,7 @@ class ShutterPosition(Shutter):
 
     @property
     def supported_features(self) -> int:
-        supported_features = 0
-        supported_features |= (
-                CoverEntityFeature.OPEN
-                | CoverEntityFeature.CLOSE
-                | CoverEntityFeature.STOP
-                | CoverEntityFeature.SET_POSITION
-            )
-        return supported_features
+        return super().supported_features|CoverEntityFeature.SET_POSITION
 
     @property
     def is_closed(self) -> bool | None:
