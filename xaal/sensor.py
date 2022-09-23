@@ -76,6 +76,7 @@ class PowerMeter(XAALSensorEntity):
 
 class WifiMeter(XAALSensorEntity):
     _attr_device_class= SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_native_unit_of_measurement = const.SIGNAL_STRENGTH_DECIBELS
     _xaal_attribute = 'rssi'
 
 

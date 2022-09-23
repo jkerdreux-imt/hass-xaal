@@ -87,6 +87,9 @@ class Bridge(object):
         return False
 
     def monitor_event(self, event, dev):
+        # DB_SERVER keep spamming us
+        if dev.address == DB_SERVER: return
+
         entity = self.get_entity(dev.address)
         #_LOGGER.debug(f"{event} {dev.address} {dev.is_ready()} => {entity}")
 

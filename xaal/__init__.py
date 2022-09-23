@@ -9,7 +9,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["light", "switch", "sensor", "binary_sensor"]
+PLATFORMS: list[str] = ["light", "switch", "sensor", "binary_sensor","cover"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -17,7 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     bridge = Bridge(hass)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = bridge
 
-    #await bridge.wait_is_ready()
+    # await bridge.wait_is_ready()
     # _LOGGER.debug("xAAL Bridge READY")
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     return True
