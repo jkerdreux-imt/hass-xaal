@@ -1,9 +1,9 @@
 import logging
 
-from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity
+from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity, ColorMode
 from homeassistant.util import color as color_util
 
-from .core import XAALEntity, EntityFactory, async_setup_factory
+from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device):
+    def new_entity(self, device: MonitorDevice) -> bool:
         if device.dev_type.startswith('lamp.'):
             entity = Lamp(device, self._bridge)
             self.add_entity(entity,device.address)
@@ -33,7 +33,7 @@ class Lamp(XAALEntity, LightEntity):
             return {"brightness"}
 
     @property
-    def color_mode(self):
+    def color_mode(self) -> ColorMode | str | None:
         mode = self.get_attribute('mode')
         if mode == 'white':
             return 'color_temp'
@@ -43,12 +43,13 @@ class Lamp(XAALEntity, LightEntity):
         return 'brightness'
 
     @property
-    def brightness(self):
+    def brightness(self) -> int | None:
         brightness = self.get_attribute('brightness',0)
         return round(255 * (int(brightness) / 100))
 
+
     @property
-    def hs_color(self):
+    def hs_color(self) -> tuple[float, float] | None:
         hsv = self.get_attribute('hsv')
         if hsv:
             return (hsv[0], hsv[1]*100)

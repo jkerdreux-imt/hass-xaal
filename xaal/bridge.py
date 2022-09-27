@@ -1,10 +1,14 @@
 
 import asyncio
+from typing import Dict, List, Any, Type
 
 from homeassistant.core import HomeAssistant
-from xaal.lib import AsyncEngine, tools, MessageType
+from xaal.lib import AsyncEngine, tools, Device, Message, bindings
 from xaal.schemas import devices as schemas
+
+from .core import EntityFactory, XAALEntity, MonitorDevice
 from xaal.monitor import Monitor, Notification
+
 
 import logging
 _LOGGER = logging.getLogger(__name__)
@@ -15,7 +19,7 @@ DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 UNSUPPORTED_TYPES = ['cli','hmi','gateway','windgauge','barometer','soundmeter']
 
 
-def filter_msg(msg):
+def filter_msg(msg: Message) -> bool:
     m_type = msg.dev_type.split('.')[0]
     if m_type in UNSUPPORTED_TYPES:
         return False
@@ -37,36 +41,36 @@ class Bridge(object):
         self._factories = []
 
     @property
-    def engine(self):
+    def engine(self) -> AsyncEngine:
         return self._eng
 
-    async def on_start(self):
+    async def on_start(self) -> None:
         _LOGGER.info(f"{self._eng} started")
         #await self.wait_is_ready()
         print("Subscribing..")
         self._mon.subscribe(self.monitor_event)
         self._eng.subscribe(self.monitor_notification)
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         _LOGGER.info(f"{self._eng} stopped")
 
-    def add_entity(self, addr, entity):
+    def add_entity(self, addr: bindings.UUID, entity: XAALEntity) -> None:
         _LOGGER.debug(f"new Entity {addr} {entity}")
         self._entities.update({addr: entity})
 
-    def remove_entity(self, addr):
+    def remove_entity(self, addr: bindings.UUID) -> None:
         self._entities.pop(addr)
 
-    def get_entity(self, addr):
+    def get_entity(self, addr: bindings.UUID) -> XAALEntity:
         return self._entities.get(addr, None)
 
-    def add_factory(self, klass):
+    def add_factory(self, klass: Type[EntityFactory]):
         self._factories.append(klass)
 
-    def remove_factory(self, klass):
+    def remove_factory(self, klass: Type[EntityFactory]):
         self._factories.remove(klass)
 
-    def setup_device(self):
+    def setup_device(self) -> Device:
         dev = schemas.hmi()
         dev.dev_type = 'hmi.hass'
         dev.vendor_id = 'IMT Atlantique'
@@ -76,7 +80,7 @@ class Bridge(object):
         self._eng.add_device(dev)
         return dev
 
-    def send_request(self, targets, action, body=None):
+    def send_request(self, targets: List[bindings.UUID], action: str, body: Dict[str, Any] | None =None):
         self._mon.engine.send_request(self._dev, targets, action, body)
 
     async def wait_is_ready(self) -> bool:
@@ -86,7 +90,7 @@ class Bridge(object):
             await asyncio.sleep(0.5)
         return False
 
-    def monitor_event(self, event, dev):
+    def monitor_event(self, notif: Notification, dev: MonitorDevice):
         # DB_SERVER keep spamming us
         if dev.address == DB_SERVER: return
 
@@ -95,8 +99,8 @@ class Bridge(object):
 
         # WARNING, never call ha_state update on a newly created entity, 
         # hass will block on this task (tricks: asyncio.sleep can fix that)
-        if entity and (event == Notification.attribute_change):
-            _LOGGER.debug(f"{event} {dev.address} => {entity}")
+        if entity and (notif == Notification.attribute_change):
+            _LOGGER.debug(f"{notif} {dev.address} => {entity}")
             entity.schedule_update_ha_state()
             return
 
@@ -111,7 +115,7 @@ class Bridge(object):
                 _LOGGER.warning(f"Unable to find entity for {dev.address} {dev.dev_type} ")
 
 
-    def monitor_notification(self, msg):
+    def monitor_notification(self, msg: Message):
         # right now the monitor doesn't send event on notification, so the bridge deals w/
         # both monitor events & messages.
         if (not msg.is_notify()) or msg.is_alive() or msg.is_attributes_change():

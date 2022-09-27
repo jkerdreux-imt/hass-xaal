@@ -2,7 +2,7 @@ import logging
 from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
 
 
-from .core import EntityFactory, XAALEntity, async_setup_factory
+from .core import EntityFactory, XAALEntity, MonitorDevice, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device):
+    def new_entity(self, device: MonitorDevice) -> bool:
         if device.dev_type.startswith('powerrelay.'):
             entity = PowerRelay(device, self._bridge)
             self.add_entity(entity,device.address)

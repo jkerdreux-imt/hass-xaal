@@ -1,11 +1,10 @@
 import logging
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-
 from homeassistant import const
 
-from .core import XAALEntity, EntityFactory, async_setup_factory
-
+from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device):
+    def new_entity(self, device: MonitorDevice) -> bool:
         entity = None
         if device.dev_type.startswith('thermometer.'):
             entity = Thermometer(device, self._bridge)
@@ -48,7 +47,7 @@ class Factory(EntityFactory):
 class XAALSensorEntity(XAALEntity, SensorEntity):
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         target = getattr(self,'_xaal_attribute')
         return self.get_attribute(target)
 

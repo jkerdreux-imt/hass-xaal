@@ -3,8 +3,7 @@ from typing import Any
 
 from homeassistant.components.cover import CoverEntity, CoverDeviceClass, CoverEntityFeature, ATTR_POSITION
 
-
-from .core import XAALEntity, EntityFactory, async_setup_factory
+from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device):
+    def new_entity(self, device: MonitorDevice) -> bool:
         entity = None
         
         if device.dev_type == 'shutter.basic':
@@ -80,5 +79,5 @@ class ShutterPosition(Shutter):
 
     def set_cover_position(self, **kwargs: Any) -> None:
         position = kwargs.get(ATTR_POSITION, None)
-        if position:
+        if position != None:
             self.send_request('set_position',{'position':position})

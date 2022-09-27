@@ -1,9 +1,13 @@
+import imp
 import logging
+
+from typing import Literal
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.const import STATE_ON, STATE_OFF
 
-from .core import XAALEntity, EntityFactory, async_setup_factory
+from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from xaal.lib import Message
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,7 +17,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device):
+    def new_entity(self, device: MonitorDevice) -> bool:
         entity = None
 
         if device.dev_type.startswith('motion.'):
@@ -37,7 +41,7 @@ class Factory(EntityFactory):
 class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
 
     @property
-    def state(self):
+    def state(self) -> Literal["on", "off"] | None:
         try:
             attr = getattr(self,'_xaal_attribute')
             value = self.get_attribute(attr)
@@ -68,7 +72,7 @@ class Button(XAALBinarySensorEntity):
         _LOGGER.warning(f"Button event: {self.entity_id}")
         self.hass.bus.fire("xaal_event", {'entity_id': self.entity_id, "click_type": click_type})
 
-    def handle_notification(self, msg):
+    def handle_notification(self, msg: Message):
         if msg.action == 'click':
             self.click_event('single')
         if msg.action == 'double_click':
