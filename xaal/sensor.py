@@ -36,6 +36,9 @@ class Factory(EntityFactory):
         if device.dev_type.startswith('luxmeter.'):
             entity = LuxMeter(device, self._bridge)
 
+        if device.dev_type.startswith('co2meter.'):
+            entity = CO2Meter(device, self._bridge)
+
         if entity:
             self.add_entity(entity, device.address)
             return True
@@ -84,3 +87,11 @@ class LuxMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.ILLUMINANCE
     _attr_native_unit_of_measurement = const.LIGHT_LUX
     _xaal_attribute = 'illuminance'
+
+
+class CO2Meter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.CO2
+    _attr_native_unit_of_measurement = const.CONCENTRATION_PARTS_PER_MILLION
+    _xaal_attribute = 'co2'
+    
+    

@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 #DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
 DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 
-UNSUPPORTED_TYPES = ['cli','hmi','gateway','windgauge','barometer','co2meter','soundmeter']
+UNSUPPORTED_TYPES = ['cli','hmi','gateway','windgauge','barometer','soundmeter']
 
 
 def filter_msg(msg):
