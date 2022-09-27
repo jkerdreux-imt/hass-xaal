@@ -1,20 +1,28 @@
+import logging
 
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, TYPE_CHECKING
 from .const import DOMAIN
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import Entity, DeviceInfo
+
 from xaal.lib import bindings
 from xaal.monitor.monitor import Device as MonitorDevice
 
-from .bridge import Bridge
-import logging
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    # Bridge import for type check produce a circular import 
+    # error, to avoid this we use this trick.
+    from .bridge import Bridge
 
+
+_LOGGER = logging.getLogger(__name__)
 
 class XAALEntity(Entity):
     # _attr_has_entity_name = True
 
-    def __init__(self, dev: MonitorDevice, bridge: Bridge) -> None:
+    def __init__(self, dev: MonitorDevice, bridge: "Bridge") -> None:
         self._dev = dev
         self._bridge = bridge
 
@@ -74,7 +82,7 @@ class XAALEntity(Entity):
 
 class EntityFactory(object):
 
-    def __init__(self, bridge: Bridge, async_add_entitites: Callable) -> None:
+    def __init__(self, bridge: "Bridge", async_add_entitites: Callable) -> None:
         self._bridge = bridge
         self._async_add_entitites = async_add_entitites
         self._bridge.add_factory(self)
@@ -85,7 +93,13 @@ class EntityFactory(object):
         self._bridge.add_entity(address, entity)
 
 
-def async_setup_factory(hass, config_entry, async_add_entities, factory_class):
+def async_setup_factory(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    factory_class: EntityFactory
+    ) -> None:
+
     bridge = hass.data[DOMAIN][config_entry.entry_id]
     factory = factory_class(bridge, async_add_entities)
     for dev in bridge._mon.devices:

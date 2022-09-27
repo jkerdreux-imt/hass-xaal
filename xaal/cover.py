@@ -1,6 +1,9 @@
 import logging
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.cover import CoverEntity, CoverDeviceClass, CoverEntityFeature, ATTR_POSITION
 
 from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
@@ -8,7 +11,11 @@ from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 

@@ -1,13 +1,20 @@
 import logging
-from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
 
 from .core import EntityFactory, XAALEntity, MonitorDevice, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 

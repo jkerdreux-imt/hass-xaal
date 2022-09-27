@@ -3,6 +3,9 @@ import logging
 
 from typing import Literal
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.const import STATE_ON, STATE_OFF
 
@@ -11,9 +14,13 @@ from xaal.lib import Message
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
 
 class Factory(EntityFactory):
 
