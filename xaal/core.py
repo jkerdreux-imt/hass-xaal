@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class XAALEntity(Entity):
     # _attr_has_entity_name = True
+    _attr_available: bool = False
 
     def __init__(self, dev: MonitorDevice, bridge: "Bridge") -> None:
         self._dev = dev
@@ -39,12 +40,11 @@ class XAALEntity(Entity):
 
         return {
             "identifiers": {(DOMAIN, ident)},
-            # If desired, the name for the device could be different to the entity
-            # "name": dev.description.get("info", ""),
-            "name": dev.display_name,
-            # "sw_version": dev.description[""],
+            "name": dev.display_name,            
             "model": dev.description.get("product_id", ""),
             "manufacturer": dev.description.get("vendor_id", ""),
+            "sw_version": dev.description.get("version", ""),
+            #"hw_version": dev.description.get("hw_id", ""),
         }
 
     def send_request(self, action: str, body: Dict[str, Any] | None =None) -> None:
@@ -61,10 +61,6 @@ class XAALEntity(Entity):
         return self._dev.dev_type.split('.')[0]
 
     @property
-    def available(self) -> bool:
-        return True
-
-    @property
     def should_poll(self) -> bool:
         """No polling needed."""
         return False
@@ -79,6 +75,10 @@ class XAALEntity(Entity):
         addr = str(self._dev.address).replace('-', '_')
         return f"xaal.{addr}"
 
+    async def async_added_to_hass(self) -> None:
+        """call by HASS when entity is ready"""
+        self._attr_available = True
+        
 
 class EntityFactory(object):
 

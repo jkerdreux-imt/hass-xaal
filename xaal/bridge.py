@@ -29,7 +29,7 @@ def filter_msg(msg: Message) -> bool:
 class Bridge(object):
 
     def __init__(self, hass: HomeAssistant) -> None:
-        """Init dummy hub."""
+        """Init xAAL bridge."""
         self._hass = hass
         self._eng = AsyncEngine()
         self._dev = self.setup_device()
@@ -45,7 +45,7 @@ class Bridge(object):
         return self._eng
 
     async def on_start(self) -> None:
-        _LOGGER.info(f"{self._eng} started")
+        """Subscribe to Monitor events and Messages"""
         #await self.wait_is_ready()
         print("Subscribing..")
         self._mon.subscribe(self.monitor_event)
@@ -53,8 +53,19 @@ class Bridge(object):
 
     def on_stop(self) -> None:
         _LOGGER.info(f"{self._eng} stopped")
+    
+    def new_entity(self,dev: MonitorDevice) -> None:
+        """search factories to build a new entities"""
+        cnt = 0
+        for fact in self._factories:
+            r = fact.new_entity(dev)
+            if r:
+                cnt = cnt + 1
+        if cnt==0:
+            _LOGGER.warning(f"Unable to find entity for {dev.address} {dev.dev_type} ")
 
     def add_entity(self, addr: bindings.UUID, entity: XAALEntity) -> None:
+        """register a new entity (called from factories"""
         _LOGGER.debug(f"new Entity {addr} {entity}")
         self._entities.update({addr: entity})
 
@@ -65,12 +76,14 @@ class Bridge(object):
         return self._entities.get(addr, None)
 
     def add_factory(self, klass: Type[EntityFactory]):
+        """ register a new platform factory"""
         self._factories.append(klass)
 
     def remove_factory(self, klass: Type[EntityFactory]):
         self._factories.remove(klass)
 
     def setup_device(self) -> Device:
+        """setup a new device need by the Monitor"""
         dev = schemas.hmi()
         dev.dev_type = 'hmi.hass'
         dev.vendor_id = 'IMT Atlantique'
@@ -81,39 +94,27 @@ class Bridge(object):
         return dev
 
     def send_request(self, targets: List[bindings.UUID], action: str, body: Dict[str, Any] | None =None):
+        """send a xAAL request (queueing it)"""
         self._mon.engine.send_request(self._dev, targets, action, body)
 
     async def wait_is_ready(self) -> bool:
+        """Wait the monitor to received all devices infos """
         while 1:
             if self._mon.boot_finished:
                 return True
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.2)
         return False
 
     def monitor_event(self, notif: Notification, dev: MonitorDevice):
-        # DB_SERVER keep spamming us
-        if dev.address == DB_SERVER: return
-
         entity = self.get_entity(dev.address)
-        #_LOGGER.debug(f"{event} {dev.address} {dev.is_ready()} => {entity}")
-
-        # WARNING, never call ha_state update on a newly created entity, 
-        # hass will block on this task (tricks: asyncio.sleep can fix that)
-        if entity and (notif == Notification.attribute_change):
-            _LOGGER.debug(f"{notif} {dev.address} => {entity}")
-            entity.schedule_update_ha_state()
+        # update entities if found
+        if entity and (notif in [Notification.attribute_change, Notification.description_change, Notification.metadata_change]):
+            if entity.available:
+                entity.schedule_update_ha_state()
             return
-
+        # It's a new entity 
         if entity is None and dev.is_ready():
-            cnt = 0
-            for h in self._factories:
-                r = h.new_entity(dev)
-                if r:
-                    #_LOGGER.info(f"New entity for {dev.address}")
-                    cnt = cnt + 1
-            if cnt==0:
-                _LOGGER.warning(f"Unable to find entity for {dev.address} {dev.dev_type} ")
-
+            self.new_entity(dev)
 
     def monitor_notification(self, msg: Message):
         # right now the monitor doesn't send event on notification, so the bridge deals w/
