@@ -3,7 +3,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, LightEntity, ColorMode
+from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP
 from homeassistant.util import color as color_util
 
 from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
@@ -35,19 +35,19 @@ class Lamp(XAALEntity, LightEntity):
     def supported_color_modes(self) -> str:
         dev_type = self._dev.dev_type
         if dev_type in ['lamp.color']:
-            return {"brightness", "hs", "color_temp"}
+            return {ColorMode.BRIGHTNESS, ColorMode.HS, ColorMode.COLOR_TEMP}
         if dev_type in ['lamp.dimmer']:
-            return {"brightness"}
+            return {ColorMode.BRIGHTNESS}
 
     @property
     def color_mode(self) -> ColorMode | str | None:
         mode = self.get_attribute('mode')
         if mode == 'white':
-            return 'color_temp'
+            return ColorMode.COLOR_TEMP
         elif mode == 'color':
-            return 'hs'
+            return ColorMode.HS
         # FIXME: xAAL don't have this kind of lamp
-        return 'brightness'
+        return ColorMode.BRIGHTNESS
 
     @property
     def brightness(self) -> int | None:
