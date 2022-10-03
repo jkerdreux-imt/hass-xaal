@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Callable, Dict, TYPE_CHECKING
+from typing import Any, Dict, TYPE_CHECKING
 from .const import DOMAIN
 
 from homeassistant.config_entries import ConfigEntry
@@ -82,7 +82,7 @@ class XAALEntity(Entity):
 
 class EntityFactory(object):
 
-    def __init__(self, bridge: "Bridge", async_add_entitites: Callable) -> None:
+    def __init__(self, bridge: "Bridge", async_add_entitites: AddEntitiesCallback) -> None:
         self._bridge = bridge
         self._async_add_entitites = async_add_entitites
         self._bridge.add_factory(self)
