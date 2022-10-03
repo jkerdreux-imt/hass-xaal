@@ -44,6 +44,9 @@ class Factory(EntityFactory):
         if device.dev_type.startswith('co2meter.'):
             entity = CO2Meter(device, self._bridge)
 
+        if device.dev_type.startswith('gateway.'):
+            entity = Gateway(device, self._bridge)
+
         if entity:
             self.add_entity(entity, device.address)
             return True
@@ -100,3 +103,12 @@ class CO2Meter(XAALSensorEntity):
     _xaal_attribute = 'co2'
     
     
+class Gateway(XAALEntity, SensorEntity):
+    _attr_native_unit_of_measurement = "embedded"
+    _attr_icon: str | None = "mdi:swap-horizontal"
+
+    @property
+    def native_value(self) -> Any:
+        embs = self.get_attribute("embedded")
+        return len(embs) if embs else 0
+
