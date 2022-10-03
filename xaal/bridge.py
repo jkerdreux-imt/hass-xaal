@@ -1,5 +1,6 @@
 
 import asyncio
+import functools
 from typing import Dict, List, Any, Type
 
 from homeassistant.core import HomeAssistant
@@ -16,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 #DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
 DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 
-UNSUPPORTED_TYPES = ['cli','hmi','gateway','windgauge','barometer','soundmeter']
+UNSUPPORTED_TYPES = ['cli','hmi','windgauge','barometer','soundmeter']
 
 
 def filter_msg(msg: Message) -> bool:
@@ -62,8 +63,8 @@ class Bridge(object):
             if r:
                 cnt = cnt + 1
         if cnt==0:
-            _LOGGER.warning(f"Unable to find entity for {dev.address} {dev.dev_type} ")
-
+            self.warm_once(f"Unable to find entity for {dev.address} {dev.dev_type} ")
+       
     def add_entity(self, addr: bindings.UUID, entity: XAALEntity) -> None:
         """register a new entity (called from factories"""
         _LOGGER.debug(f"new Entity {addr} {entity}")
@@ -125,3 +126,7 @@ class Bridge(object):
         if entity and hasattr(entity, 'handle_notification'):
             msg.dump()
             entity.handle_notification(msg)
+
+    @functools.lru_cache(maxsize=128)
+    def warm_once(self, msg: str):
+        _LOGGER.warning(msg)
