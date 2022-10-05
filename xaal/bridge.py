@@ -41,6 +41,9 @@ class Bridge(object):
         self._entities = {}
         self._factories = []
 
+    #####################################################
+    # Engine & Hooks
+    #####################################################
     @property
     def engine(self) -> AsyncEngine:
         return self._eng
@@ -54,7 +57,18 @@ class Bridge(object):
 
     def on_stop(self) -> None:
         _LOGGER.info(f"{self._eng} stopped")
-    
+
+    async def wait_is_ready(self) -> bool:
+        """Wait the monitor to received all devices infos """
+        while 1:
+            if self._mon.boot_finished:
+                return True
+            await asyncio.sleep(0.2)
+        return False
+
+    #####################################################
+    # Entities
+    #####################################################
     def new_entity(self,dev: MonitorDevice) -> None:
         """search factories to build a new entities"""
         cnt = 0
@@ -76,6 +90,9 @@ class Bridge(object):
     def get_entity(self, addr: bindings.UUID) -> XAALEntity:
         return self._entities.get(addr, None)
 
+    #####################################################
+    # Factories
+    #####################################################
     def add_factory(self, klass: Type[EntityFactory]):
         """ register a new platform factory"""
         self._factories.append(klass)
@@ -83,6 +100,9 @@ class Bridge(object):
     def remove_factory(self, klass: Type[EntityFactory]):
         self._factories.remove(klass)
 
+    #####################################################
+    # xAAL stuffs
+    #####################################################
     def setup_device(self) -> Device:
         """setup a new device need by the Monitor"""
         dev = schemas.hmi()
@@ -98,14 +118,9 @@ class Bridge(object):
         """send a xAAL request (queueing it)"""
         self._mon.engine.send_request(self._dev, targets, action, body)
 
-    async def wait_is_ready(self) -> bool:
-        """Wait the monitor to received all devices infos """
-        while 1:
-            if self._mon.boot_finished:
-                return True
-            await asyncio.sleep(0.2)
-        return False
-
+    #####################################################
+    # Monitor events & callbacks
+    #####################################################
     def monitor_event(self, notif: Notification, dev: MonitorDevice):
         entity = self.get_entity(dev.address)
         # update entities if found
@@ -113,7 +128,7 @@ class Bridge(object):
             if entity.available:
                 entity.schedule_update_ha_state()
             return
-        # It's a new entity 
+        # Not found, so it's a new entity 
         if entity is None and dev.is_ready():
             self.new_entity(dev)
 
@@ -127,6 +142,9 @@ class Bridge(object):
             msg.dump()
             entity.handle_notification(msg)
 
+    #####################################################
+    # Miscs
+    #####################################################
     @functools.lru_cache(maxsize=128)
     def warm_once(self, msg: str):
         _LOGGER.warning(msg)

@@ -52,6 +52,7 @@ class XAALEntity(Entity):
         self._bridge.send_request([self._dev.address, ], action, body)
 
     def get_attribute(self, name: str, default: Dict[str, Any] =None) -> Any:
+        """ return a attribute for xAAL device"""
         return self._dev.attributes.get(name, default)
 
     def short_type(self) -> str:
