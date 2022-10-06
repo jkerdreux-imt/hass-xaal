@@ -81,14 +81,28 @@ class Bridge(object):
        
     def add_entities(self, addr: bindings.UUID, entities: list[XAALEntity]) -> None:
         """register a some entities (called from factories)"""
-        _LOGGER.debug(f"new Entity {addr} {entities}")
+        _LOGGER.debug(f"new Entities: {addr} {entities}")
         self._entities.update({addr: entities})
 
     def remove_entities(self, addr: bindings.UUID) -> None:
+        _LOGGER.debug(f"Removing entities: {addr}")
         self._entities.pop(addr)
 
     def get_entities(self, addr: bindings.UUID) -> list[XAALEntity] | None:
         return self._entities.get(addr, None)
+
+    def ha_remove_device(self, ident: str) -> None:
+        """ User asked to remove an HA device, we need to find out the entites """
+        tmp = ident.split(':')
+        addr = tools.get_uuid(tmp[1])
+        # is it a xAAL device, if so remove it's address
+        if tmp[0] == 'dev':
+            self.remove_entities(addr)
+        else:
+            # it's a group, remove all associated stuff
+            devs = self._mon.devices.get_with_group(addr)
+            for d in devs:
+                self.remove_entities(d.address)
 
     #####################################################
     # Factories

@@ -39,7 +39,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry ) -> bool:
     """Remove a config entry from a device."""
-    #import pdb;pdb.set_trace()
     bridge = hass.data[DOMAIN][entry.entry_id]
-    _LOGGER.warning(f"Deleting {device_entry}")
+    ident_id = list(device_entry.identifiers)[0][1]
+    bridge.ha_remove_device(ident_id)
     return True

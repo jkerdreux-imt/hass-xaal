@@ -21,51 +21,13 @@ async def async_setup_entry(
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device: MonitorDevice) -> bool:
-        entity = None
-        if device.dev_type.startswith('thermometer.'):
-            entity = Thermometer(device, self._bridge)
-
-        if device.dev_type.startswith('hygrometer.'):
-            entity = Hygrometer(device, self._bridge)
-
-        if device.dev_type.startswith('barometer.'):
-            entity = Barometer(device, self._bridge)
-
-        if device.dev_type.startswith('battery.'):
-            entity = Battery(device, self._bridge)
-
-        if device.dev_type.startswith('powermeter.'):
-            entity = PowerMeter(device, self._bridge)
-
-        if device.dev_type.startswith('wifimeter.'):
-            entity = WifiMeter(device, self._bridge)
-
-        if device.dev_type.startswith('luxmeter.'):
-            entity = LuxMeter(device, self._bridge)
-
-        if device.dev_type.startswith('co2meter.'):
-            entity = CO2Meter(device, self._bridge)
-
-        if device.dev_type.startswith('soundmeter.'):
-            entity = SoundMeter(device, self._bridge)
-
-        if device.dev_type.startswith('gateway.'):
-            entity = Gateway(device, self._bridge)
-
-        if entity:
-            self.add_entity(entity, device.address)
-            return True
-        return False
-
-
     @property
     def mapping(self):
         return {'thermometer.'  : [Thermometer ],
                 'hygrometer.'   : [Hygrometer],
                 'barometer.'    : [Barometer],
                 'battery.'      : [Battery],
-                'powermeter.'   : [PowerMeter],
+                'powermeter.'   : [PowerMeter,CurrentMeter, VoltMeter],
                 'wifimeter.'    : [WifiMeter],
                 'luxmeter.'     : [LuxMeter],
                 'co2meter.'     : [CO2Meter],
@@ -108,6 +70,16 @@ class PowerMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = const.POWER_WATT
     _xaal_attribute = 'power'
+
+class CurrentMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.CURRENT
+    _attr_native_unit_of_measurement = const.ELECTRIC_CURRENT_AMPERE
+    _xaal_attribute = 'current'
+
+class VoltMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_native_unit_of_measurement = const.ELECTRIC_POTENTIAL_VOLT
+    _xaal_attribute = 'voltage'
 
 
 class WifiMeter(XAALSensorEntity):

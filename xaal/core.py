@@ -76,6 +76,8 @@ class XAALEntity(Entity):
     @property
     def unique_id(self) -> str:
         addr = str(self._dev.address).replace('-', '_')
+        if hasattr(self,'_xaal_attribute'):
+            return f"xaal.{addr}.{self._xaal_attribute}"
         return f"xaal.{addr}"
 
     async def async_added_to_hass(self) -> None:
