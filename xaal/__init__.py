@@ -2,6 +2,8 @@
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntry
+
 
 from .bridge import Bridge
 from .const import DOMAIN
@@ -18,7 +20,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = bridge
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
-    #await bridge.wait_is_ready()
+    # await bridge.wait_is_ready()
     return True
 
 
@@ -33,3 +35,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     else:
         _LOGGER.error("Unable to unload xAAL platforms")
     return unload_ok
+
+
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry ) -> bool:
+    """Remove a config entry from a device."""
+    #import pdb;pdb.set_trace()
+    bridge = hass.data[DOMAIN][entry.entry_id]
+    _LOGGER.warning(f"Deleting {device_entry}")
+    return True
