@@ -79,15 +79,15 @@ class Bridge(object):
         if cnt==0:
             self.warm_once(f"Unable to find entity for {dev.address} {dev.dev_type} ")
        
-    def add_entity(self, addr: bindings.UUID, entity: XAALEntity) -> None:
-        """register a new entity (called from factories)"""
-        _LOGGER.debug(f"new Entity {addr} {entity}")
-        self._entities.update({addr: entity})
+    def add_entities(self, addr: bindings.UUID, entities: list[XAALEntity]) -> None:
+        """register a some entities (called from factories)"""
+        _LOGGER.debug(f"new Entity {addr} {entities}")
+        self._entities.update({addr: entities})
 
-    def remove_entity(self, addr: bindings.UUID) -> None:
+    def remove_entities(self, addr: bindings.UUID) -> None:
         self._entities.pop(addr)
 
-    def get_entity(self, addr: bindings.UUID) -> XAALEntity:
+    def get_entities(self, addr: bindings.UUID) -> list[XAALEntity] | None:
         return self._entities.get(addr, None)
 
     #####################################################
@@ -122,14 +122,15 @@ class Bridge(object):
     # Monitor events & callbacks
     #####################################################
     def monitor_event(self, notif: Notification, dev: MonitorDevice):
-        entity = self.get_entity(dev.address)
+        entities = self.get_entities(dev.address)
         # update entities if found
-        if entity and (notif in [Notification.attribute_change, Notification.description_change, Notification.metadata_change]):
-            if entity.available:
-                entity.schedule_update_ha_state()
+        if entities and (notif in [Notification.attribute_change, Notification.description_change, Notification.metadata_change]):
+            for ent in entities:
+                if ent.available:
+                    ent.schedule_update_ha_state()
             return
         # Not found, so it's a new entity 
-        if entity is None and dev.is_ready():
+        if entities is None and dev.is_ready():
             self.build_entities(dev)
 
     def monitor_notification(self, msg: Message):
@@ -137,10 +138,12 @@ class Bridge(object):
         # both monitor events & messages.
         if (not msg.is_notify()) or msg.is_alive() or msg.is_attributes_change():
             return
-        entity = self.get_entity(msg.source)
-        if entity and hasattr(entity, 'handle_notification'):
-            msg.dump()
-            entity.handle_notification(msg)
+        entities = self.get_entities(msg.source)
+        if entities :
+            for ent in entities:
+                if hasattr(ent, 'handle_notification'):
+                    msg.dump()
+                    ent.handle_notification(msg)
 
     #####################################################
     # Miscs

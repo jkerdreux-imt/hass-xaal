@@ -90,10 +90,6 @@ class EntityFactory(object):
         self._async_add_entitites = async_add_entitites
         self._bridge.add_factory(self)
 
-    def add_entities(self, entities: Entity, address: bindings.UUID) -> None:
-        self._async_add_entitites(entities)
-        self._bridge.add_entity(address, entities[0])
-
     def build_entities(self, device: MonitorDevice) -> bool:
         """ return True if this factory managed to build some entities"""
         result = []
@@ -103,7 +99,8 @@ class EntityFactory(object):
                     entity = k(device, self._bridge)
                     result.append(entity)
                 # an factory can match only one dev_type
-                self.add_entities(result, device.address)
+                self._async_add_entitites(result)
+                self._bridge.add_entities(device.address, result)
                 return True
         return False
 
