@@ -21,19 +21,10 @@ async def async_setup_entry(
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device: MonitorDevice) -> bool:
-        entity = None
-        
-        if device.dev_type == 'shutter.basic':
-            entity = Shutter(device, self._bridge)
-
-        if device.dev_type == 'shutter.position':
-            entity = ShutterPosition(device, self._bridge)
-
-        if entity:
-            self.add_entity(entity,device.address)
-            return True
-        return False
+    @property
+    def mapping(self):
+        return { 'shutter.position' : [ShutterPosition], 
+                 'shutter.'         : [Shutter,], }
 
 
 class Shutter(XAALEntity, CoverEntity):

@@ -1,3 +1,4 @@
+from asyncio import proactor_events
 import logging
 
 from typing import Any, Dict, TYPE_CHECKING
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 class XAALEntity(Entity):
-    # _attr_has_entity_name = True
+    #_attr_has_entity_name = True
     _attr_available: bool = False
 
     def __init__(self, dev: MonitorDevice, bridge: "Bridge") -> None:
@@ -68,7 +69,8 @@ class XAALEntity(Entity):
 
     @property
     def name(self) -> str | None:
-        dev_class = self.device_class or self.short_type()
+        force_name = getattr(self,'_force_name',None)
+        dev_class = force_name or self.device_class or self.short_type()
         return f"{dev_class} {self._dev.display_name}"
 
     @property
@@ -88,10 +90,27 @@ class EntityFactory(object):
         self._async_add_entitites = async_add_entitites
         self._bridge.add_factory(self)
 
+    def add_entities(self, entities: Entity, address: bindings.UUID) -> None:
+        self._async_add_entitites(entities)
+        self._bridge.add_entity(address, entities[0])
 
-    def add_entity(self, entity: Entity, address: bindings.UUID) -> None:
-        self._async_add_entitites([entity])
-        self._bridge.add_entity(address, entity)
+    def build_entities(self, device: MonitorDevice) -> bool:
+        """ return True if this factory managed to build some entities"""
+        result = []
+        for type_ in self.mapping.keys():
+            if device.dev_type.startswith(type_):
+                for k in self.mapping[type_]:
+                    entity = k(device, self._bridge)
+                    result.append(entity)
+                # an factory can match only one dev_type
+                self.add_entities(result, device.address)
+                return True
+        return False
+
+    @property
+    def mapping(self) -> dict:
+        """return an ordered dict containing dev_type to platform class"""
+        return {}
 
 
 def async_setup_factory(

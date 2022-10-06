@@ -29,6 +29,9 @@ class Factory(EntityFactory):
         if device.dev_type.startswith('hygrometer.'):
             entity = Hygrometer(device, self._bridge)
 
+        if device.dev_type.startswith('barometer.'):
+            entity = Barometer(device, self._bridge)
+
         if device.dev_type.startswith('battery.'):
             entity = Battery(device, self._bridge)
 
@@ -44,6 +47,9 @@ class Factory(EntityFactory):
         if device.dev_type.startswith('co2meter.'):
             entity = CO2Meter(device, self._bridge)
 
+        if device.dev_type.startswith('soundmeter.'):
+            entity = SoundMeter(device, self._bridge)
+
         if device.dev_type.startswith('gateway.'):
             entity = Gateway(device, self._bridge)
 
@@ -52,6 +58,19 @@ class Factory(EntityFactory):
             return True
         return False
 
+
+    @property
+    def mapping(self):
+        return {'thermometer.'  : [Thermometer ],
+                'hygrometer.'   : [Hygrometer],
+                'barometer.'    : [Barometer],
+                'battery.'      : [Battery],
+                'powermeter.'   : [PowerMeter],
+                'wifimeter.'    : [WifiMeter],
+                'luxmeter.'     : [LuxMeter],
+                'co2meter.'     : [CO2Meter],
+                'soundmeter.'   : [SoundMeter],
+                'gateway.'      : [Gateway], }
 
 class XAALSensorEntity(XAALEntity, SensorEntity):
 
@@ -71,6 +90,12 @@ class Hygrometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_native_unit_of_measurement = const.PERCENTAGE
     _xaal_attribute = 'humidity'
+
+
+class Barometer(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.PRESSURE
+    _attr_native_unit_of_measurement = const.PRESSURE_HPA
+    _xaal_attribute = 'pressure'
 
 
 class Battery(XAALSensorEntity):
@@ -102,7 +127,15 @@ class CO2Meter(XAALSensorEntity):
     _attr_native_unit_of_measurement = const.CONCENTRATION_PARTS_PER_MILLION
     _xaal_attribute = 'co2'
     
-    
+
+class SoundMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_native_unit_of_measurement = const.SIGNAL_STRENGTH_DECIBELS
+    _force_name = 'sound'
+    _xaal_attribute = 'sound'
+    _attr_icon: str | None = "mdi:music-circle-outline"
+
+
 class Gateway(XAALEntity, SensorEntity):
     _attr_native_unit_of_measurement = "embedded"
     _attr_icon: str | None = "mdi:swap-horizontal"
@@ -112,3 +145,6 @@ class Gateway(XAALEntity, SensorEntity):
         embs = self.get_attribute("embedded")
         return len(embs) if embs else 0
 
+    @property
+    def name(self) -> str | None:
+        return self._dev.description.get('product_id','gateway')

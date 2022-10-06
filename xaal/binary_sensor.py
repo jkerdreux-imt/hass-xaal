@@ -24,26 +24,12 @@ async def async_setup_entry(
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device: MonitorDevice) -> bool:
-        entity = None
-
-        if device.dev_type.startswith('motion.'):
-            entity = Motion(device, self._bridge)
-
-        if device.dev_type.startswith('contact.'):
-            entity = Contact(device, self._bridge)
-
-        if device.dev_type.startswith('switch.'):
-            entity = Switch(device, self._bridge)
-
-        if device.dev_type.startswith('button.'):
-            entity = Button(device, self._bridge)
-
-        if entity:
-            self.add_entity(entity, device.address)
-            return True
-        return False
-
+    @property
+    def mapping(self):
+        return {'motion.' : [Motion],
+                'contact.': [Contact],
+                'switch.' : [Switch],
+                'button.' : [Button], }
 
 class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
 

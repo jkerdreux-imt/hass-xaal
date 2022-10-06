@@ -21,12 +21,9 @@ async def async_setup_entry(
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device: MonitorDevice) -> bool:
-        if device.dev_type.startswith('lamp.'):
-            entity = Lamp(device, self._bridge)
-            self.add_entity(entity,device.address)
-            return True
-        return False
+    @property
+    def mapping(self):
+        return {'lamp.' : [Lamp]}
 
 
 class Lamp(XAALEntity, LightEntity):

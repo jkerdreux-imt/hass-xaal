@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.siren import SirenEntity, SirenEntityFeature, ATTR_DURATION
 
 
-from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from .core import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,12 +22,9 @@ async def async_setup_entry(
 
 class Factory(EntityFactory):
 
-    def new_entity(self, device: MonitorDevice) -> bool:
-        if device.dev_type.startswith('siren.'):
-            entity = Siren(device, self._bridge)
-            self.add_entity(entity,device.address)
-            return True
-        return False
+    @property
+    def mapping(self) -> dict:
+        return {'siren.': [Siren]}
 
 
 class Siren(XAALEntity, SirenEntity):

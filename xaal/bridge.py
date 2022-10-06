@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 #DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
 DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 
-UNSUPPORTED_TYPES = ['cli','hmi','windgauge','barometer','soundmeter']
+UNSUPPORTED_TYPES = ['cli','hmi','windgauge',]
 
 
 def filter_msg(msg: Message) -> bool:
@@ -69,18 +69,18 @@ class Bridge(object):
     #####################################################
     # Entities
     #####################################################
-    def new_entity(self,dev: MonitorDevice) -> None:
+    def build_entities(self,dev: MonitorDevice) -> None:
         """search factories to build a new entities"""
         cnt = 0
         for fact in self._factories:
-            r = fact.new_entity(dev)
+            r = fact.build_entities(dev)
             if r:
                 cnt = cnt + 1
         if cnt==0:
             self.warm_once(f"Unable to find entity for {dev.address} {dev.dev_type} ")
        
     def add_entity(self, addr: bindings.UUID, entity: XAALEntity) -> None:
-        """register a new entity (called from factories"""
+        """register a new entity (called from factories)"""
         _LOGGER.debug(f"new Entity {addr} {entity}")
         self._entities.update({addr: entity})
 
@@ -101,7 +101,7 @@ class Bridge(object):
         self._factories.remove(klass)
 
     #####################################################
-    # xAAL stuffs
+    # xAAL
     #####################################################
     def setup_device(self) -> Device:
         """setup a new device need by the Monitor"""
@@ -130,7 +130,7 @@ class Bridge(object):
             return
         # Not found, so it's a new entity 
         if entity is None and dev.is_ready():
-            self.new_entity(dev)
+            self.build_entities(dev)
 
     def monitor_notification(self, msg: Message):
         # right now the monitor doesn't send event on notification, so the bridge deals w/
