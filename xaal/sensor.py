@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant import const
 
-from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from .bridge import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +32,9 @@ class Factory(EntityFactory):
                 'luxmeter.'     : [LuxMeter],
                 'co2meter.'     : [CO2Meter],
                 'soundmeter.'   : [SoundMeter],
-                'gateway.'      : [Gateway], }
+                'gateway.'      : [Gateway],
+                'tts.'          : [TTS],
+               }
 
 class XAALSensorEntity(XAALEntity, SensorEntity):
 
@@ -120,3 +122,22 @@ class Gateway(XAALEntity, SensorEntity):
     @property
     def name(self) -> str | None:
         return self._dev.description.get('product_id','gateway')
+
+
+class TTS(XAALEntity,SensorEntity):
+    _attr_native_value = 1
+
+    def setup(self):
+        import voluptuous as vol
+        import homeassistant.helpers.config_validation as cv
+        XAAL_NOTIF_SCHEMA =  vol.Schema(
+                                {
+                                    vol.Required("message"): cv.template,
+                                    vol.Optional("title"): cv.template,
+                                }
+                            )
+        self._bridge._hass.services.async_register("notify",self._dev.display_name, self.notify, schema=XAAL_NOTIF_SCHEMA)
+
+    def notify(self, service):
+        msg = service.data['message'].template
+        self.send_request('say',{'msg':msg})

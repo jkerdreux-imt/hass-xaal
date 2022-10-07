@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.cover import CoverEntity, CoverDeviceClass, CoverEntityFeature, ATTR_POSITION
 
-from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from .bridge import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 

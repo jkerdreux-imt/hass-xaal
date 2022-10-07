@@ -6,7 +6,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP
 from homeassistant.util import color as color_util
 
-from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from .bridge import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 

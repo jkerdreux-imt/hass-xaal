@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
 
-from .core import EntityFactory, XAALEntity, MonitorDevice, async_setup_factory
+from .bridge import EntityFactory, XAALEntity, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 

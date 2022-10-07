@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.const import STATE_ON, STATE_OFF
 
-from .core import XAALEntity, EntityFactory, MonitorDevice, async_setup_factory
+from .bridge import XAALEntity, EntityFactory, async_setup_factory
 from xaal.lib import Message
 
 _LOGGER = logging.getLogger(__name__)

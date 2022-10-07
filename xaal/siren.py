@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.siren import SirenEntity, SirenEntityFeature, ATTR_DURATION
 
 
-from .core import XAALEntity, EntityFactory, async_setup_factory
+from .bridge import XAALEntity, EntityFactory, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
