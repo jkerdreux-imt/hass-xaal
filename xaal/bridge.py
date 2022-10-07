@@ -14,8 +14,6 @@ from xaal.monitor import Monitor, Notification
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-#DB_SERVER = tools.get_uuid('d28fbc27-190f-4ee5-815a-fe05233400a2')
-DB_SERVER = tools.get_uuid('9064ccbc-84ea-11e8-80cc-82ed25e6aaaa')
 
 UNSUPPORTED_TYPES = ['cli','hmi','windgauge',]
 
@@ -29,12 +27,12 @@ def filter_msg(msg: Message) -> bool:
 
 class Bridge(object):
 
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant, db_server) -> None:
         """Init xAAL bridge."""
         self._hass = hass
         self._eng = AsyncEngine()
         self._dev = self.setup_device()
-        self._mon = Monitor(self._dev, filter_msg, db_server=DB_SERVER)
+        self._mon = Monitor(self._dev, filter_msg, db_server)
         self._eng.on_start(self.on_start)
         self._eng.on_stop(self.on_stop)
         self._eng.start()

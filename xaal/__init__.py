@@ -4,9 +4,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-
+from xaal.lib import tools
 from .bridge import Bridge
-from .const import DOMAIN
+from .const import DOMAIN, CONF_DB_SERVER
+
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,7 +17,10 @@ PLATFORMS: list[str] = ["light", "switch", "sensor", "binary_sensor","cover", "s
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # create the hub and load the platforms
-    bridge = Bridge(hass)
+    addr = entry.data.get(CONF_DB_SERVER)
+    db_server = tools.get_uuid(addr)
+
+    bridge = Bridge(hass, db_server)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = bridge
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
