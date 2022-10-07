@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.const import STATE_ON, STATE_OFF
 
-from .bridge import XAALEntity, EntityFactory, async_setup_factory
+from .bridge import XAALEntity, async_setup_factory
 from xaal.lib import Message
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,18 +18,14 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
+    async_add_entities: AddEntitiesCallback)  -> None:
+    
+    binding = {'motion.' : [Motion],
+               'contact.': [Contact],
+               'switch.' : [Switch],
+               'button.' : [Button], }
+    return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
-class Factory(EntityFactory):
-
-    @property
-    def mapping(self):
-        return {'motion.' : [Motion],
-                'contact.': [Contact],
-                'switch.' : [Switch],
-                'button.' : [Button], }
 
 class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
 

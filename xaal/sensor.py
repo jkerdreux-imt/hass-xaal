@@ -7,34 +7,33 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant import const
 
-from .bridge import XAALEntity, EntityFactory, async_setup_factory
+from .bridge import XAALEntity, async_setup_factory
+from .const import XAAL_TTS_SCHEMA
+from . import utils
+
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
+    async_add_entities: AddEntitiesCallback ) -> None:
+    binding = {'thermometer.'  : [Thermometer ],
+               'hygrometer.'   : [Hygrometer],
+               'barometer.'    : [Barometer],
+               'battery.'      : [Battery],
+               'powermeter.'   : [PowerMeter,CurrentMeter, VoltMeter],
+               'wifimeter.'    : [WifiMeter],
+               'luxmeter.'     : [LuxMeter],
+               'co2meter.'     : [CO2Meter],
+               'soundmeter.'   : [SoundMeter],
+               'gateway.'      : [Gateway],
+               'tts.'          : [TTS],
+              }
 
+    return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
-class Factory(EntityFactory):
-
-    @property
-    def mapping(self):
-        return {'thermometer.'  : [Thermometer ],
-                'hygrometer.'   : [Hygrometer],
-                'barometer.'    : [Barometer],
-                'battery.'      : [Battery],
-                'powermeter.'   : [PowerMeter,CurrentMeter, VoltMeter],
-                'wifimeter.'    : [WifiMeter],
-                'luxmeter.'     : [LuxMeter],
-                'co2meter.'     : [CO2Meter],
-                'soundmeter.'   : [SoundMeter],
-                'gateway.'      : [Gateway],
-                'tts.'          : [TTS],
-               }
 
 class XAALSensorEntity(XAALEntity, SensorEntity):
 
@@ -110,7 +109,7 @@ class SoundMeter(XAALSensorEntity):
     _attr_icon: str | None = "mdi:music-circle-outline"
 
 
-class Gateway(XAALEntity, SensorEntity):
+class Gateway(XAALSensorEntity):
     _attr_native_unit_of_measurement = "embedded"
     _attr_icon: str | None = "mdi:swap-horizontal"
 
@@ -124,20 +123,17 @@ class Gateway(XAALEntity, SensorEntity):
         return self._dev.description.get('product_id','gateway')
 
 
-class TTS(XAALEntity,SensorEntity):
+class TTS(XAALEntity):
     _attr_native_value = 1
 
     def setup(self):
-        import voluptuous as vol
-        import homeassistant.helpers.config_validation as cv
-        XAAL_NOTIF_SCHEMA =  vol.Schema(
-                                {
-                                    vol.Required("message"): cv.template,
-                                    vol.Optional("title"): cv.template,
-                                }
-                            )
-        self._bridge._hass.services.async_register("notify",self._dev.display_name, self.notify, schema=XAAL_NOTIF_SCHEMA)
+        name = utils.str_to_id(self.name)
+        self._bridge._hass.services.async_register("notify",name, self.say, XAAL_TTS_SCHEMA)
 
-    def notify(self, service):
+    def say(self, service):
         msg = service.data['message'].template
         self.send_request('say',{'msg':msg})
+
+    @property
+    def name(self) -> str | None:
+        return self._dev.description.get('info','tts')

@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.cover import CoverEntity, CoverDeviceClass, CoverEntityFeature, ATTR_POSITION
 
-from .bridge import XAALEntity, EntityFactory, async_setup_factory
+from .bridge import XAALEntity, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,15 +16,9 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
-
-
-class Factory(EntityFactory):
-
-    @property
-    def mapping(self):
-        return { 'shutter.position' : [ShutterPosition], 
-                 'shutter.'         : [Shutter,], }
+    binding = { 'shutter.position' : [ShutterPosition], 
+                'shutter.'         : [Shutter,] }
+    return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 
 class Shutter(XAALEntity, CoverEntity):

@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
 
-from .bridge import EntityFactory, XAALEntity, async_setup_factory
+from .bridge import XAALEntity, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,16 +13,10 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    return async_setup_factory(hass, config_entry, async_add_entities, Factory)
+    async_add_entities: AddEntitiesCallback ) -> None:
 
-
-class Factory(EntityFactory):
-
-    @property
-    def mapping(self):
-        return {'powerrelay.' : [PowerRelay],}
+    binding = {'powerrelay.' : [PowerRelay]}
+    return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 
 class PowerRelay(XAALEntity, SwitchEntity):

@@ -1,4 +1,3 @@
-
 import asyncio
 import functools
 from typing import Dict, List, Any, Type
@@ -17,15 +16,9 @@ from xaal.monitor import Monitor, Notification
 from xaal.monitor.monitor import Device as MonitorDevice
 
 import logging
+
 _LOGGER = logging.getLogger(__name__)
 UNSUPPORTED_TYPES = ['cli','hmi','windgauge',]
-
-
-def filter_msg(msg: Message) -> bool:
-    m_type = msg.dev_type.split('.')[0]
-    if m_type in UNSUPPORTED_TYPES:
-        return False
-    return True
 
 
 class XAALEntity(Entity):
@@ -97,18 +90,19 @@ class XAALEntity(Entity):
         
 
 class EntityFactory(object):
+    """Class that hold binding (dev_type->Entities) and add_entities callback for each platform"""
 
-    def __init__(self, bridge: "Bridge", async_add_entitites: AddEntitiesCallback) -> None:
+    def __init__(self, bridge: "Bridge", async_add_entitites: AddEntitiesCallback, binding: dict) -> None:
         self._bridge = bridge
         self._async_add_entitites = async_add_entitites
-        self._bridge.add_factory(self)
+        self._map = binding
 
     def build_entities(self, device: MonitorDevice) -> bool:
         """ return True if this factory managed to build some entities"""
         result = []
-        for type_ in self.mapping.keys():
-            if device.dev_type.startswith(type_):
-                for k in self.mapping[type_]:
+        for b_type in self._map.keys():
+            if device.dev_type.startswith(b_type):
+                for k in self._map[b_type]:
                     entity = k(device, self._bridge)
                     result.append(entity)
                 # an factory can match only one dev_type
@@ -117,10 +111,28 @@ class EntityFactory(object):
                 return True
         return False
 
-    @property
-    def mapping(self) -> dict:
-        """return an ordered dict containing dev_type to platform class"""
-        return {}
+
+
+def async_setup_factory(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    binding: dict ) -> None:
+
+    bridge: Bridge = hass.data[DOMAIN][config_entry.entry_id]
+    factory = EntityFactory(bridge, async_add_entities, binding)
+    bridge.add_factory(factory)
+
+    for dev in bridge._mon.devices:
+        if dev.is_ready():
+            factory.build_entities(dev)
+
+
+def filter_msg(msg: Message) -> bool:
+    m_type = msg.dev_type.split('.')[0]
+    if m_type in UNSUPPORTED_TYPES:
+        return False
+    return True
 
 
 class Bridge(object):
@@ -203,12 +215,12 @@ class Bridge(object):
     #####################################################
     # Factories
     #####################################################
-    def add_factory(self, klass: Type[EntityFactory]):
+    def add_factory(self, factory: EntityFactory):
         """ register a new platform factory"""
-        self._factories.append(klass)
+        self._factories.append(factory)
 
-    def remove_factory(self, klass: Type[EntityFactory]):
-        self._factories.remove(klass)
+    def remove_factory(self, factory: EntityFactory):
+        self._factories.remove(factory)
 
     #####################################################
     # xAAL
@@ -261,17 +273,3 @@ class Bridge(object):
     @functools.lru_cache(maxsize=128)
     def warm_once(self, msg: str):
         _LOGGER.warning(msg)
-
-
-def async_setup_factory(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    factory_class: EntityFactory
-    ) -> None:
-
-    bridge = hass.data[DOMAIN][config_entry.entry_id]
-    factory = factory_class(bridge, async_add_entities)
-    for dev in bridge._mon.devices:
-        if dev.is_ready():
-            factory.new_entity(dev)

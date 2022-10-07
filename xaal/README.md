@@ -21,3 +21,11 @@ Read carefully :
 - entity_id (used in UI, script and so on) is build from unique_id or entity_name if provided
 - changes in xAAL nickname only affect entity_name, entity_id will not change. This is the 
   way HASS works. 
+
+xALL Device => Entities / Devices
+- For a given device_type you can have more than one Entity (powermeter => power/current/voltage)
+- One Entity is always bounded to HASS device
+- If more than one entity is used, they bellow to the same HASS device
+- If xAAL group is used (ie: smart plug), the binding groups them in a HASS device.
+
+
