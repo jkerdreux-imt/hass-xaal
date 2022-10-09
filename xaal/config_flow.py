@@ -1,10 +1,11 @@
 
-import voluptuous as vol
-from homeassistant import config_entries
 import logging
 
+import voluptuous as vol
+from homeassistant import config_entries
 
 from .const import DOMAIN, CONF_DB_SERVER
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +24,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # no user input right now, so we just show the empty form
         errors = {}
-
 
         # if we have some user_input let's start
         if user_input is not None:

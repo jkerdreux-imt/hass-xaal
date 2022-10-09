@@ -24,15 +24,27 @@ UNSUPPORTED_TYPES = ['cli','hmi','windgauge',]
 class XAALEntity(Entity):
     #_attr_has_entity_name = True
     _attr_available: bool = False
+    _attr_should_poll: bool = False
 
     def __init__(self, dev: MonitorDevice, bridge: "Bridge") -> None:
         self._dev = dev
         self._bridge = bridge
         self.setup()
 
+    #####################################################
+    # Init
+    #####################################################
     def setup(self):
+        """ Use setup to tweak a entity at creation """
         pass
 
+    async def async_added_to_hass(self) -> None:
+        """call by HASS when entity is ready"""
+        self._attr_available = True
+
+    #####################################################
+    # HASS Device
+    #####################################################
     @property
     def device_info(self) -> DeviceInfo | None :
         dev = self._dev
@@ -52,6 +64,9 @@ class XAALEntity(Entity):
             "suggested_area" : dev.db.get("location",None)
         }
 
+    #####################################################
+    # xAAL helpers
+    #####################################################
     def send_request(self, action: str, body: Dict[str, Any] | None =None) -> None:
         _LOGGER.debug(f"{self} {action} {body}")
         self._bridge.send_request([self._dev.address, ], action, body)
@@ -60,16 +75,14 @@ class XAALEntity(Entity):
         """ return a attribute for xAAL device"""
         return self._dev.attributes.get(name, default)
 
+    #####################################################
+    # Entity properties
+    #####################################################
     def short_type(self) -> str:
         """ return a fake device class for entity that doesn't have one """
         # this apply for light, button
         # NOTE: I don't know why some entities don't have a device class
         return self._dev.dev_type.split('.')[0]
-
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed."""
-        return False
 
     @property
     def name(self) -> str | None:
@@ -83,10 +96,6 @@ class XAALEntity(Entity):
         if hasattr(self,'_xaal_attribute'):
             return f"xaal.{addr}.{self._xaal_attribute}"
         return f"xaal.{addr}"
-
-    async def async_added_to_hass(self) -> None:
-        """call by HASS when entity is ready"""
-        self._attr_available = True
         
 
 class EntityFactory(object):
@@ -110,7 +119,6 @@ class EntityFactory(object):
                 self._bridge.add_entities(device.address, result)
                 return True
         return False
-
 
 
 def async_setup_factory(
@@ -152,10 +160,6 @@ class Bridge(object):
     #####################################################
     # Engine & Hooks
     #####################################################
-    @property
-    def engine(self) -> AsyncEngine:
-        return self._eng
-
     async def on_start(self) -> None:
         """Subscribe to Monitor events and Messages"""
         #await self.wait_is_ready()
@@ -238,7 +242,7 @@ class Bridge(object):
 
     def send_request(self, targets: List[bindings.UUID], action: str, body: Dict[str, Any] | None =None):
         """send a xAAL request (queueing it)"""
-        self._mon.engine.send_request(self._dev, targets, action, body)
+        self._eng.send_request(self._dev, targets, action, body)
 
     #####################################################
     # Monitor events & callbacks
