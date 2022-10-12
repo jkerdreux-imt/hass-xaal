@@ -1,4 +1,3 @@
-import imp
 import logging
 
 from typing import Literal
@@ -14,12 +13,13 @@ from xaal.lib import Message
 
 _LOGGER = logging.getLogger(__name__)
 
+# https://www.home-assistant.io/integrations/binary_sensor/
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback)  -> None:
-    
+
     binding = {'motion.' : [Motion],
                'contact.': [Contact],
                'switch.' : [Switch],
@@ -55,6 +55,10 @@ class Switch(XAALBinarySensorEntity):
 
 
 class Button(XAALBinarySensorEntity):
+
+    @property
+    def entity_registry_visible_default(self):
+        return False
 
     def click_event(self, click_type):
         # TODO change this sig, to hande several button types..
