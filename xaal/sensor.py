@@ -129,7 +129,7 @@ class TTS(XAALEntity):
 
     def setup(self):
         name = utils.str_to_id(self.name)
-        self._bridge._hass.services.async_register("notify",name, self.say, XAAL_TTS_SCHEMA)
+        self._bridge.hass.services.async_register("notify",name, self.say, XAAL_TTS_SCHEMA)
 
     def say(self, service):
         msg = service.data['message'].template

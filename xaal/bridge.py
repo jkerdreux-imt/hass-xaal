@@ -1,14 +1,19 @@
 import asyncio
 import functools
+from html import entities
+from turtle import pd, up
 from typing import Dict, List, Any, Type
+from uuid import UUID
 
 from .const import DOMAIN
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.entity import Entity, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
-
+from homeassistant.helpers import device_registry
+from homeassistant.helpers.device_registry import DeviceEntry, EVENT_DEVICE_REGISTRY_UPDATED
+from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 
 from xaal.lib import AsyncEngine, tools, Device, Message, bindings
 from xaal.schemas import devices as schemas
@@ -18,11 +23,11 @@ from xaal.monitor.monitor import Device as MonitorDevice
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-UNSUPPORTED_TYPES = ['cli','hmi','windgauge',]
+UNSUPPORTED_TYPES = ['cli','hmi','logger']
 
 
 class XAALEntity(Entity):
-    #_attr_has_entity_name = True
+    _attr_has_entity_name = True
     _attr_available: bool = False
     _attr_should_poll: bool = False
 
@@ -48,20 +53,20 @@ class XAALEntity(Entity):
     @property
     def device_info(self) -> DeviceInfo | None :
         dev = self._dev
-        ident = "dev:" + str(dev.address)
-
         group_id = dev.description.get('group_id', None)
         if group_id:
             ident = "grp:" + str(group_id)
-
+        else:
+            ident = "dev:" + str(dev.address)
+        name = dev.description.get("ha_dev_name",ident)
         return {
             "identifiers": {(DOMAIN, ident)},
-            "name": dev.display_name,            
+            "name": name,
             "model": dev.description.get("product_id", None),
             "manufacturer": dev.description.get("vendor_id", None),
             "sw_version": dev.description.get("version", None),
             "hw_version": dev.description.get("hw_id", None),
-            "suggested_area" : dev.db.get("location",None)
+            "suggested_area": dev.db.get("location",None)
         }
 
     #####################################################
@@ -75,6 +80,9 @@ class XAALEntity(Entity):
         """ return a attribute for xAAL device"""
         return self._dev.attributes.get(name, default)
 
+    @property
+    def address(self):
+        return self._dev.address
     #####################################################
     # Entity properties
     #####################################################
@@ -86,9 +94,10 @@ class XAALEntity(Entity):
 
     @property
     def name(self) -> str | None:
+        db_name = self._dev.db.get('ha_name',None)
         force_name = getattr(self,'_force_name',None)
-        dev_class = force_name or self.device_class or self.short_type()
-        return f"{dev_class} {self._dev.display_name}"
+        name = db_name or force_name or self.device_class or self.short_type()
+        return name
 
     @property
     def unique_id(self) -> str:
@@ -96,7 +105,35 @@ class XAALEntity(Entity):
         if hasattr(self,'_xaal_attribute'):
             return f"xaal.{addr}.{self._xaal_attribute}"
         return f"xaal.{addr}"
-        
+
+    def _async_registry_entry_updated(self) -> None:
+        if not self.available:
+            return
+
+        kv = {}
+        if self.registry_entry.name != self._dev.db.get('ha_name',None):
+            kv.update({'ha_name': self.registry_entry.name})
+
+        print(f"{self.device_registry_entry.name_by_user} != {self._dev.db.get('ha_dev_name',None)}")
+
+        if self.device_registry_entry.name_by_user != self._dev.db.get('ha_dev_name',None):
+            kv.update({'ha_dev_name': self.device_registry_entry.name_by_user})
+
+        if kv != {}:
+            _LOGGER.warning(f"{self} updating {self.registry_entry.name}")
+            # FIXME: we can drop key too! 
+            body = {'device':self._dev.address,'map':kv}
+            print(body)
+            self._bridge.ha_update_db(body)
+            #self._dev.set_db(kv)
+        #import pdb;pdb.set_trace()
+
+    @property
+    def device_registry_entry(self) -> DeviceEntry|None:
+        device_id = self.registry_entry.device_id
+        dr = device_registry.async_get(self.hass)
+        return dr.async_get(device_id)
+
 
 class EntityFactory(object):
     """Class that hold binding (dev_type->Entities) and add_entities callback for each platform"""
@@ -104,14 +141,14 @@ class EntityFactory(object):
     def __init__(self, bridge: "Bridge", async_add_entitites: AddEntitiesCallback, binding: dict) -> None:
         self._bridge = bridge
         self._async_add_entitites = async_add_entitites
-        self._map = binding
+        self._binding = binding
 
     def build_entities(self, device: MonitorDevice) -> bool:
         """ return True if this factory managed to build some entities"""
         result = []
-        for b_type in self._map.keys():
+        for b_type in self._binding.keys():
             if device.dev_type.startswith(b_type):
-                for k in self._map[b_type]:
+                for k in self._binding[b_type]:
                     entity = k(device, self._bridge)
                     result.append(entity)
                 # an factory can match only one dev_type
@@ -147,7 +184,7 @@ class Bridge(object):
 
     def __init__(self, hass: HomeAssistant, db_server) -> None:
         """Init xAAL bridge."""
-        self._hass = hass
+        self.hass = hass
         self._eng = AsyncEngine()
         self._dev = self.setup_device()
         self._mon = Monitor(self._dev, filter_msg, db_server)
@@ -156,19 +193,79 @@ class Bridge(object):
         self._eng.start()
         self._entities = {}
         self._factories = []
+        hass.bus.async_listen(EVENT_DEVICE_REGISTRY_UPDATED,self.device_registry_updated)
+        hass.bus.async_listen(EVENT_ENTITY_REGISTRY_UPDATED,self.entity_registry_updated)
+
+    async def device_registry_updated(self, event: Event):
+        if event.data.get('action', None) != 'update': 
+            return
+
+        _LOGGER.warning(event.data)
+        #import pdb;pdb.set_trace()
+        device_id = event.data.get('device_id',None)
+
+        dr = device_registry.async_get(self.hass)
+        device_entry = dr.async_get(device_id)
+        idents = list(device_entry.identifiers)
+        if idents[0][0]!= DOMAIN:
+            return
+
+        data = idents[0][1].split(':')
+        addr = tools.get_uuid(data[1])
+        if data[0] == 'dev':
+            addrs = [addr,]
+
+        elif data[0] == 'grp':
+            addrs = [dev.address for dev in self._mon.devices.get_with_group(addr)]
+
+        kv = {'ha_dev_name': device_entry.name_by_user}
+        for addr in addrs:
+            body = {'device':addr,'map':kv}
+            self.ha_update_db(body)
+
+    async def entity_registry_updated(self, event: Event):
+        if event.data.get('action', None) != 'update': 
+            return
+
+        _LOGGER.warning(event.data)
+        # ugly bugfix HASS sync issue, we need to wait registry to be up to date.
+        await asyncio.sleep(0.1)
+        entity_id = event.data.get('entity_id',None)
+        entity = self.get_entity_by_id(entity_id)
+
+        if entity:
+            name = entity.registry_entry.name
+            if (name == None) and (entity._dev.db.get('ha_name',None) == None):
+                # HASS and DB can be out of sync, so we push db even if everything looks
+                # fine, except if there is no data
+                return
+            kv = {'ha_name': name}
+            body = {'device':entity.address,'map':kv}
+            self.ha_update_db(body)
+
+    def get_entity_by_id(self, entity_id: str) -> XAALEntity | None:
+        # This is cleary not a best way to find out entity by id, but
+        # HASS doesn't seems to provide a direct way
+        for addr, entities in self._entities.items():
+            for entity in entities:
+                if entity.entity_id == entity_id:
+                    return entity
+        return None
 
     #####################################################
     # Engine & Hooks
     #####################################################
     async def on_start(self) -> None:
         """Subscribe to Monitor events and Messages"""
-        #await self.wait_is_ready()
         print("Subscribing..")
         self._mon.subscribe(self.monitor_event)
         self._eng.subscribe(self.monitor_notification)
 
     def on_stop(self) -> None:
         _LOGGER.info(f"{self._eng} stopped")
+
+    def is_ready(self):
+        return self._mon.boot_finished
 
     async def wait_is_ready(self) -> bool:
         """Wait the monitor to received all devices infos """
@@ -190,9 +287,10 @@ class Bridge(object):
                 cnt = cnt + 1
         if cnt==0:
             self.warm_once(f"Unable to find entity for {dev.address} {dev.dev_type} ")
-       
+
     def add_entities(self, addr: bindings.UUID, entities: list[XAALEntity]) -> None:
         """register a some entities (called from factories)"""
+        #_LOGGER.debug(f"new Entities: {addr} {entities}")
         _LOGGER.debug(f"new Entities: {addr} {entities}")
         self._entities.update({addr: entities})
 
@@ -205,6 +303,7 @@ class Bridge(object):
 
     def ha_remove_device(self, ident: str) -> None:
         """ User asked to remove an HA device, we need to find out the entites """
+        # TODO: add a method to extract addresses from ident
         tmp = ident.split(':')
         addr = tools.get_uuid(tmp[1])
         # is it a xAAL device, if so remove it's address
@@ -243,6 +342,9 @@ class Bridge(object):
     def send_request(self, targets: List[bindings.UUID], action: str, body: Dict[str, Any] | None =None):
         """send a xAAL request (queueing it)"""
         self._eng.send_request(self._dev, targets, action, body)
+
+    def ha_update_db(self, body: dict):
+        self.send_request([self._mon.db_server], 'update_keys_values', body)
 
     #####################################################
     # Monitor events & callbacks
