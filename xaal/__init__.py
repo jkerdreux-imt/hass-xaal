@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # stop xAAL tasks before removing reference
     # FIXME: some tasks never ends: RecvQ, Timers
-    await hass.data[DOMAIN][entry.entry_id].engine.stop()
+    await hass.data[DOMAIN][entry.entry_id]._eng.stop()
     _LOGGER.debug("Unloading xAAL platforms")
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:

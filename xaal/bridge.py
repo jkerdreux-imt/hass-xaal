@@ -53,20 +53,20 @@ class XAALEntity(Entity):
     @property
     def device_info(self) -> DeviceInfo | None :
         dev = self._dev
-        group_id = dev.description.get('group_id', None)
+        group_id = dev.description.get('group_id')
         if group_id:
             ident = "grp:" + str(group_id)
         else:
             ident = "dev:" + str(dev.address)
-        name = dev.description.get("ha_dev_name",ident)
+        name = dev.db.get("ha_dev_name",ident)
         return {
             "identifiers": {(DOMAIN, ident)},
             "name": name,
-            "model": dev.description.get("product_id", None),
-            "manufacturer": dev.description.get("vendor_id", None),
-            "sw_version": dev.description.get("version", None),
-            "hw_version": dev.description.get("hw_id", None),
-            "suggested_area": dev.db.get("location",None)
+            "model": dev.description.get("product_id"),
+            "manufacturer": dev.description.get("vendor_id"),
+            "sw_version": dev.description.get("version"),
+            "hw_version": dev.description.get("hw_id"),
+            "suggested_area": dev.db.get("location")
         }
 
     #####################################################
@@ -89,15 +89,20 @@ class XAALEntity(Entity):
     def short_type(self) -> str:
         """ return a fake device class for entity that doesn't have one """
         # this apply for light, button
-        # NOTE: I don't know why some entities don't have a device class
+        # NOTE: I don't know why some HASS entities don't have a device class
         return self._dev.dev_type.split('.')[0]
 
     @property
     def name(self) -> str | None:
-        db_name = self._dev.db.get('ha_name',None)
+        db_name = self._dev.db.get('ha_name')
+        dev_name = self._dev.db.get('ha_dev_name')
+        if dev_name and db_name:
+            db_name = db_name.removeprefix(dev_name)
+
         force_name = getattr(self,'_force_name',None)
         name = db_name or force_name or self.device_class or self.short_type()
-        return name
+        #print(f"{dev_name} =>{db_name} => {name}")
+        return name.capitalize()
 
     @property
     def unique_id(self) -> str:
@@ -105,28 +110,6 @@ class XAALEntity(Entity):
         if hasattr(self,'_xaal_attribute'):
             return f"xaal.{addr}.{self._xaal_attribute}"
         return f"xaal.{addr}"
-
-    def _async_registry_entry_updated(self) -> None:
-        if not self.available:
-            return
-
-        kv = {}
-        if self.registry_entry.name != self._dev.db.get('ha_name',None):
-            kv.update({'ha_name': self.registry_entry.name})
-
-        print(f"{self.device_registry_entry.name_by_user} != {self._dev.db.get('ha_dev_name',None)}")
-
-        if self.device_registry_entry.name_by_user != self._dev.db.get('ha_dev_name',None):
-            kv.update({'ha_dev_name': self.device_registry_entry.name_by_user})
-
-        if kv != {}:
-            _LOGGER.warning(f"{self} updating {self.registry_entry.name}")
-            # FIXME: we can drop key too! 
-            body = {'device':self._dev.address,'map':kv}
-            print(body)
-            self._bridge.ha_update_db(body)
-            #self._dev.set_db(kv)
-        #import pdb;pdb.set_trace()
 
     @property
     def device_registry_entry(self) -> DeviceEntry|None:
@@ -197,51 +180,45 @@ class Bridge(object):
         hass.bus.async_listen(EVENT_ENTITY_REGISTRY_UPDATED,self.entity_registry_updated)
 
     async def device_registry_updated(self, event: Event):
-        if event.data.get('action', None) != 'update': 
+        if event.data.get('action') != 'update': 
             return
 
         _LOGGER.warning(event.data)
         #import pdb;pdb.set_trace()
-        device_id = event.data.get('device_id',None)
-
+        device_id = event.data.get('device_id')
         dr = device_registry.async_get(self.hass)
         device_entry = dr.async_get(device_id)
         idents = list(device_entry.identifiers)
         if idents[0][0]!= DOMAIN:
             return
 
-        data = idents[0][1].split(':')
-        addr = tools.get_uuid(data[1])
-        if data[0] == 'dev':
-            addrs = [addr,]
-
-        elif data[0] == 'grp':
-            addrs = [dev.address for dev in self._mon.devices.get_with_group(addr)]
-
+        addrs = self.ident_to_address(idents[0][1])
         kv = {'ha_dev_name': device_entry.name_by_user}
         for addr in addrs:
             body = {'device':addr,'map':kv}
             self.ha_update_db(body)
 
     async def entity_registry_updated(self, event: Event):
-        if event.data.get('action', None) != 'update': 
+        if event.data.get('action') != 'update': 
             return
-
         _LOGGER.warning(event.data)
         # ugly bugfix HASS sync issue, we need to wait registry to be up to date.
         await asyncio.sleep(0.1)
-        entity_id = event.data.get('entity_id',None)
+        entity_id = event.data.get('entity_id')
         entity = self.get_entity_by_id(entity_id)
 
         if entity:
             name = entity.registry_entry.name
-            if (name == None) and (entity._dev.db.get('ha_name',None) == None):
+            if (name == None) and (entity._dev.db.get('ha_name') == None):
                 # HASS and DB can be out of sync, so we push db even if everything looks
                 # fine, except if there is no data
                 return
             kv = {'ha_name': name}
             body = {'device':entity.address,'map':kv}
             self.ha_update_db(body)
+        else:
+            _LOGGER.info(f"Unable to find entiy {entity_id}")
+
 
     def get_entity_by_id(self, entity_id: str) -> XAALEntity | None:
         # This is cleary not a best way to find out entity by id, but
@@ -297,23 +274,26 @@ class Bridge(object):
     def remove_entities(self, addr: bindings.UUID) -> None:
         _LOGGER.debug(f"Removing entities: {addr}")
         self._entities.pop(addr)
+        self._mon.devices.remove(addr)
 
     def get_entities(self, addr: bindings.UUID) -> list[XAALEntity] | None:
-        return self._entities.get(addr, None)
+        return self._entities.get(addr)
 
     def ha_remove_device(self, ident: str) -> None:
         """ User asked to remove an HA device, we need to find out the entites """
-        # TODO: add a method to extract addresses from ident
+        for addr in self.ident_to_address(ident):
+            self.remove_entities(addr)
+
+    def ident_to_address(self, ident: str) -> list[bindings.UUID]:
         tmp = ident.split(':')
         addr = tools.get_uuid(tmp[1])
         # is it a xAAL device, if so remove it's address
         if tmp[0] == 'dev':
-            self.remove_entities(addr)
+            return [addr,]
         else:
-            # it's a group, remove all associated stuff
-            devs = self._mon.devices.get_with_group(addr)
-            for d in devs:
-                self.remove_entities(d.address)
+            # it's a group
+            return [dev.address for dev in self._mon.devices.get_with_group(addr)]
+        
 
     #####################################################
     # Factories
