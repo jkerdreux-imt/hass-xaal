@@ -11,11 +11,10 @@ from .bridge import XAALEntity, async_setup_factory
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback) -> None:
-    
+async def async_setup_entry(hass: HomeAssistant,
+                            config_entry: ConfigEntry,
+                            async_add_entities: AddEntitiesCallback) -> None:
+
     binding = {'lamp.' : [Lamp]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
@@ -42,9 +41,8 @@ class Lamp(XAALEntity, LightEntity):
 
     @property
     def brightness(self) -> int | None:
-        brightness = self.get_attribute('brightness',0)
+        brightness = self.get_attribute('brightness', 0)
         return round(255 * (int(brightness) / 100))
-
 
     @property
     def hs_color(self) -> tuple[float, float] | None:
@@ -89,3 +87,4 @@ class Lamp(XAALEntity, LightEntity):
 
     def turn_off(self, **kwargs) -> None:
         self.send_request('turn_off')
+

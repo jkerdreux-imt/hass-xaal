@@ -10,12 +10,11 @@ from .bridge import XAALEntity, async_setup_factory
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback ) -> None:
+async def async_setup_entry(hass: HomeAssistant,
+                            config_entry: ConfigEntry,
+                            async_add_entities: AddEntitiesCallback) -> None:
 
-    binding = {'powerrelay.' : [PowerRelay]}
+    binding = {'powerrelay.': [PowerRelay]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 
@@ -32,3 +31,4 @@ class PowerRelay(XAALEntity, SwitchEntity):
 
     def turn_off(self, **kwargs) -> None:
         self.send_request('turn_off')
+

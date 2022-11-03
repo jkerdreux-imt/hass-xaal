@@ -12,3 +12,4 @@ XAAL_TTS_SCHEMA = vol.Schema({
 XAAL_TTS_SCHEMA = vol.Schema({
     vol.Required("message"): cv.template,
 })
+

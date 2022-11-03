@@ -15,10 +15,10 @@ _LOGGER = logging.getLogger(__name__)
 
 # https://www.home-assistant.io/integrations/binary_sensor/
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback)  -> None:
+
+async def async_setup_entry(hass: HomeAssistant,
+                            config_entry: ConfigEntry,
+                            async_add_entities: AddEntitiesCallback) -> None:
 
     binding = {'motion.' : [Motion],
                'contact.': [Contact],
@@ -32,10 +32,10 @@ class XAALBinarySensorEntity(XAALEntity, BinarySensorEntity):
     @property
     def state(self) -> Literal["on", "off"] | None:
         try:
-            attr = getattr(self,'_xaal_attribute')
+            attr = getattr(self, '_xaal_attribute')
             value = self.get_attribute(attr)
             return STATE_ON if value else STATE_OFF
-        except:
+        except AttributeError:
             return None
 
 
@@ -70,3 +70,4 @@ class Button(XAALBinarySensorEntity):
             self.click_event('single')
         if msg.action == 'double_click':
             self.click_event('double')
+

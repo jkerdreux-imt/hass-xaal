@@ -4,7 +4,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, STATE_CLASS_MEASUREMENT
 from homeassistant import const
 
 from .bridge import XAALEntity, async_setup_factory
@@ -15,10 +15,9 @@ from . import utils
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback ) -> None:
+async def async_setup_entry(hass: HomeAssistant,
+                            config_entry: ConfigEntry,
+                            async_add_entities: AddEntitiesCallback) -> None:
     binding = {'thermometer.'     : [Thermometer ],
                'hygrometer.'      : [Hygrometer],
                'barometer.'       : [Barometer],
@@ -37,10 +36,11 @@ async def async_setup_entry(
 
 
 class XAALSensorEntity(XAALEntity, SensorEntity):
+    _attr_state_class = STATE_CLASS_MEASUREMENT
 
     @property
     def native_value(self) -> Any:
-        target = getattr(self,'_xaal_attribute')
+        target = getattr(self, '_xaal_attribute')
         return self.get_attribute(target)
 
 
@@ -73,10 +73,12 @@ class PowerMeter(XAALSensorEntity):
     _attr_native_unit_of_measurement = const.POWER_WATT
     _xaal_attribute = 'power'
 
+
 class CurrentMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.CURRENT
     _attr_native_unit_of_measurement = const.ELECTRIC_CURRENT_AMPERE
     _xaal_attribute = 'current'
+
 
 class VoltMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.VOLTAGE
@@ -85,7 +87,7 @@ class VoltMeter(XAALSensorEntity):
 
 
 class WifiMeter(XAALSensorEntity):
-    _attr_device_class= SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
     _attr_native_unit_of_measurement = const.SIGNAL_STRENGTH_DECIBELS
     _xaal_attribute = 'rssi'
 
@@ -100,7 +102,7 @@ class CO2Meter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.CO2
     _attr_native_unit_of_measurement = const.CONCENTRATION_PARTS_PER_MILLION
     _xaal_attribute = 'co2'
-    
+
 
 class SoundMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
@@ -121,7 +123,7 @@ class Gateway(XAALSensorEntity):
 
     @property
     def name(self) -> str | None:
-        return self._dev.description.get('product_id','gateway')
+        return self._dev.description.get('product_id', 'gateway')
 
 
 class TTS(XAALEntity):
@@ -129,12 +131,13 @@ class TTS(XAALEntity):
 
     def setup(self):
         name = utils.str_to_id(self.name)
-        self._bridge.hass.services.async_register("notify",name, self.say, XAAL_TTS_SCHEMA)
+        self._bridge.hass.services.async_register("notify", name, self.say, XAAL_TTS_SCHEMA)
 
     def say(self, service):
         msg = service.data['message'].template
-        self.send_request('say',{'msg':msg})
+        self.send_request('say', {'msg': msg})
 
     @property
     def name(self) -> str | None:
-        return self._dev.description.get('info','tts')
+        return self._dev.description.get('info', 'tts')
+

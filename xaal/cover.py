@@ -11,22 +11,20 @@ from .bridge import XAALEntity, async_setup_factory
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    binding = { 'shutter.position' : [ShutterPosition], 
-                'shutter.'         : [Shutter,] }
+async def async_setup_entry(hass: HomeAssistant,
+                            config_entry: ConfigEntry,
+                            async_add_entities: AddEntitiesCallback) -> None:
+    binding = {'shutter.position': [ShutterPosition],
+               'shutter.'        : [Shutter, ]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 
 class Shutter(XAALEntity, CoverEntity):
-    _attr_device_class= CoverDeviceClass.SHUTTER
+    _attr_device_class = CoverDeviceClass.SHUTTER
 
     @property
     def supported_features(self) -> int:
-        return CoverEntityFeature.OPEN|CoverEntityFeature.CLOSE|CoverEntityFeature.STOP
+        return CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
 
     @property
     def is_closed(self) -> bool | None:
@@ -41,11 +39,12 @@ class Shutter(XAALEntity, CoverEntity):
     def stop_cover(self, **kwargs: Any) -> None:
         self.send_request('stop')
 
+
 class ShutterPosition(Shutter):
 
     @property
     def supported_features(self) -> int:
-        return super().supported_features|CoverEntityFeature.SET_POSITION
+        return super().supported_features | CoverEntityFeature.SET_POSITION
 
     @property
     def is_closed(self) -> bool | None:
@@ -58,7 +57,7 @@ class ShutterPosition(Shutter):
         if self.get_attribute('action') == 'down':
             return True
         return False
-    
+
     @property
     def is_opening(self) -> bool | None:
         if self.get_attribute('action') == 'up':
@@ -71,5 +70,6 @@ class ShutterPosition(Shutter):
 
     def set_cover_position(self, **kwargs: Any) -> None:
         position = kwargs.get(ATTR_POSITION, None)
-        if position != None:
-            self.send_request('set_position',{'position':position})
+        if position is not None:
+            self.send_request('set_position', {'position': position})
+

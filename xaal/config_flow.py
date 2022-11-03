@@ -15,6 +15,7 @@ DATA_SCHEMA = vol.Schema(
     }
 )
 
+
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
@@ -34,3 +35,4 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
         # else we show the empty form
         return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors=errors)
+
