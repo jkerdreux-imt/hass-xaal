@@ -46,7 +46,7 @@ class XAALSensorEntity(XAALEntity, SensorEntity):
 
 class Thermometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = const.TEMP_CELSIUS
+    _attr_native_unit_of_measurement = const.UnitOfTemperature.CELSIUS
     _xaal_attribute = 'temperature'
 
 

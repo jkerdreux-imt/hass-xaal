@@ -3,8 +3,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP
-from homeassistant.util import color as color_util
+from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP_KELVIN
 
 from .bridge import XAALEntity, async_setup_factory
 
@@ -15,7 +14,7 @@ async def async_setup_entry(hass: HomeAssistant,
                             config_entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
 
-    binding = {'lamp.' : [Lamp]}
+    binding = {'lamp.': [Lamp]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 
@@ -51,26 +50,26 @@ class Lamp(XAALEntity, LightEntity):
             return (hsv[0], hsv[1]*100)
 
     @property
-    def color_temp(self) -> int | None:
+    def color_temp_kelvin(self) -> int | None:
         white_temp = self.get_attribute('white_temperature')
         if white_temp:
-            return color_util.color_temperature_kelvin_to_mired(white_temp)
+            return white_temp
 
     @property
     def is_on(self) -> bool | None:
         return self.get_attribute('light')
 
     def turn_on(self, **kwargs) -> None:
+        _LOGGER.warn(kwargs)
         color = kwargs.get(ATTR_HS_COLOR, None)
         brightness = kwargs.get(ATTR_BRIGHTNESS, None)
-        color_temp = kwargs.get(ATTR_COLOR_TEMP, None)
+        color_temp = kwargs.get(ATTR_COLOR_TEMP_KELVIN, None)
 
         # FIX: support duration
         # duration   = kwargs.get('duration',None)
 
         if color_temp:
-            white_temp = color_util.color_temperature_mired_to_kelvin(color_temp)
-            self.send_request('set_white_temperature', {'white_temperature': white_temp})
+            self.send_request('set_white_temperature', {'white_temperature': color_temp})
 
         if brightness:
             brightness = int(brightness / 255 * 100)
