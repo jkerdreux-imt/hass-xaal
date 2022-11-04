@@ -15,7 +15,7 @@ async def async_setup_entry(hass: HomeAssistant,
                             config_entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
     binding = {'shutter.position': [ShutterPosition],
-               'shutter.'        : [Shutter, ]}
+               'shutter.'        : [Shutter]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
 

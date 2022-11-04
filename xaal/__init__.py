@@ -9,10 +9,9 @@ from .bridge import Bridge
 from .const import DOMAIN, CONF_DB_SERVER
 
 
-
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["light", "switch", "sensor", "binary_sensor","cover", "siren"]
+PLATFORMS: list[str] = ["light", "switch", "sensor", "binary_sensor", "cover", "siren"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -41,10 +40,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry ) -> bool:
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry) -> bool:
     """Remove a config entry from a device."""
     bridge = hass.data[DOMAIN][entry.entry_id]
     # TODO: add a method to extract ident_id
     ident_id = list(device_entry.identifiers)[0][1]
     bridge.ha_remove_device(ident_id)
     return True
+
