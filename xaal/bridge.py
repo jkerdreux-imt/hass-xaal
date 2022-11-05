@@ -365,7 +365,7 @@ class Bridge(object):
         device_id = event.data.get('device_id')
         dr = device_registry.async_get(self.hass)
         device_entry = dr.async_get(device_id)
-        (domain, dev_ident) = utils.extract_device_identifiers(device_entry.identifiers)
+        (domain, dev_ident) = utils.get_dev_identifiers(device_entry.identifiers)
         if domain != DOMAIN:
             return
 

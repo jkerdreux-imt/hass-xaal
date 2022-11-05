@@ -1,4 +1,3 @@
-
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -44,7 +43,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry) -> bool:
     """Remove a config entry from a device."""
     bridge = hass.data[DOMAIN][entry.entry_id]
-    (domain, dev_ident) = utils.extract_device_identifiers(device_entry.identifiers)
+    (domain, dev_ident) = utils.get_dev_identifiers(device_entry.identifiers)
     bridge.ha_remove_device(dev_ident)
     return True
 
