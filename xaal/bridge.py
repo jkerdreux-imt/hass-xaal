@@ -4,6 +4,7 @@ import functools
 from typing import Dict, List, Any
 
 from .const import DOMAIN
+from . import utils
 
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.entity import Entity, DeviceInfo
@@ -11,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.device_registry import DeviceEntry, EVENT_DEVICE_REGISTRY_UPDATED
+from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 
 from xaal.lib import AsyncEngine, tools, Device, Message, bindings
@@ -359,16 +361,16 @@ class Bridge(object):
         """store the new device name in DB if changed"""
         if event.data.get('action') != 'update':
             return
-        _LOGGER.info(event.data)
+        # is it a xAAL device
         device_id = event.data.get('device_id')
         dr = device_registry.async_get(self.hass)
         device_entry = dr.async_get(device_id)
-        idents = list(device_entry.identifiers)
-        print(idents)
-        if idents[0][0] != DOMAIN:
+        (domain, dev_ident) = utils.extract_device_identifiers(device_entry.identifiers)
+        if domain != DOMAIN:
             return
 
-        addrs = self.ident_to_address(idents[0][1])
+        _LOGGER.info(event.data)
+        addrs = self.ident_to_address(dev_ident)
         kv = {'ha_dev_name': device_entry.name_by_user}
         for addr in addrs:
             body = {'device': addr, 'map': kv}
@@ -378,12 +380,17 @@ class Bridge(object):
         """store the new entity name in DB if changed"""
         if event.data.get('action') != 'update':
             return
-        _LOGGER.info(event.data)
         # ugly bugfix HASS sync issue, we need to wait registry to be up to date.
         await asyncio.sleep(0.1)
+        # is it xAAL entity ?
         entity_id = event.data.get('entity_id')
-        entity = self.get_entity_by_id(entity_id)
+        er = entity_registry.async_get(self.hass)
+        entity_entry = er.async_get(entity_id)
+        if entity_entry.platform != DOMAIN:
+            return
 
+        _LOGGER.info(event.data)
+        entity = self.get_entity_by_id(entity_id)
         if entity:
             name = entity.registry_entry.name
             if (name is None) and (entity._dev.db.get('ha_name') is None):
