@@ -300,10 +300,13 @@ class Bridge(object):
     def remove_entities(self, addr: bindings.UUID) -> None:
         """remove entities for a given xAAL address"""
         _LOGGER.debug(f"Removing entities: {addr}")
-        self._entities.pop(addr)
-        # if device not already auto-washed remove it
-        if self._mon.devices.get_with_addr(addr):
+        try:
+            self._entities.pop(addr)
             self._mon.devices.remove(addr)
+        except KeyError:
+            # device already auto-washed or
+            # and old entity
+            _LOGGER.warn(f"Unknow entity w/ addr {addr}")
 
     def get_entities(self, addr: bindings.UUID) -> list[XAALEntity] | None:
         """ return entities for a given xAAL address"""

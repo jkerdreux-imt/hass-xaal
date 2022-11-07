@@ -18,11 +18,11 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant,
                             config_entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
-    binding = {'thermometer.'     : [Thermometer ],
+    binding = {'thermometer.'     : [Thermometer],
                'hygrometer.'      : [Hygrometer],
                'barometer.'       : [Barometer],
                'battery.'         : [Battery],
-               'powermeter.full'  : [PowerMeter,CurrentMeter, VoltMeter],
+               'powermeter.full'  : [PowerMeter, CurrentMeter, VoltMeter],
                'powermeter.'      : [PowerMeter],
                'wifimeter.'       : [WifiMeter],
                'luxmeter.'        : [LuxMeter],
@@ -63,6 +63,7 @@ class Barometer(XAALSensorEntity):
 
 
 class Battery(XAALSensorEntity):
+    _attr_state_class = None
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_unit_of_measurement = const.PERCENTAGE
     _xaal_attribute = 'level'

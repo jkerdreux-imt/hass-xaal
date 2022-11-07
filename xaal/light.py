@@ -60,7 +60,6 @@ class Lamp(XAALEntity, LightEntity):
         return self.get_attribute('light')
 
     def turn_on(self, **kwargs) -> None:
-        _LOGGER.warn(kwargs)
         color = kwargs.get(ATTR_HS_COLOR, None)
         brightness = kwargs.get(ATTR_BRIGHTNESS, None)
         color_temp = kwargs.get(ATTR_COLOR_TEMP_KELVIN, None)
