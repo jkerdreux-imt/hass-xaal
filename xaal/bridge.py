@@ -374,7 +374,7 @@ class Bridge(object):
 
         _LOGGER.info(event.data)
         addrs = self.ident_to_address(dev_ident)
-        kv = {'ha_dev_name': device_entry.name_by_user}
+        kv = {'ha_dev_name': device_entry.name_by_user, 'location': device_entry.area_id}
         for addr in addrs:
             body = {'device': addr, 'map': kv}
             self.ha_update_db(body)
@@ -396,9 +396,7 @@ class Bridge(object):
         entity = self.get_entity_by_id(entity_id)
         if entity:
             name = entity.registry_entry.name
-            if (name is None) and (entity._dev.db.get('ha_name') is None):
-                # HASS and DB can be out of sync, so we push db even if everything looks
-                # fine, except if there is no data
+            if 'name' not in event.data.get('changes',{}).keys():
                 return
             kv = {'ha_name': name}
             body = {'device': entity.address, 'map': kv}

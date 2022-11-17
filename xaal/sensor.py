@@ -6,10 +6,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, STATE_CLASS_MEASUREMENT
 from homeassistant import const
+from homeassistant import util
 
 from .bridge import XAALEntity, async_setup_factory
 from .const import XAAL_TTS_SCHEMA
-from . import utils
+
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,8 +30,7 @@ async def async_setup_entry(hass: HomeAssistant,
                'co2meter.'        : [CO2Meter],
                'soundmeter.'      : [SoundMeter],
                'gateway.'         : [Gateway],
-               'tts.'             : [TTS],
-              }
+               'tts.'             : [TTS], }
 
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
@@ -131,7 +131,7 @@ class TTS(XAALEntity):
     _attr_native_value = 1
 
     def setup(self):
-        name = utils.str_to_id(self.name)
+        name = util.slugify(self.name)
         self._bridge.hass.services.async_register("notify", name, self.say, XAAL_TTS_SCHEMA)
 
     def say(self, service):
