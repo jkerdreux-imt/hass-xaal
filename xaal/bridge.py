@@ -111,7 +111,7 @@ class XAALEntity(Entity):
         db_name = self._dev.db.get('ha_name')
         dev_name = self._dev.db.get('ha_dev_name')
         if dev_name and db_name:
-            db_name = db_name.removeprefix(dev_name)
+            db_name = db_name.removeprefix(f"{dev_name} ")
 
         force_name = getattr(self, '_force_name', None)
         name = db_name or force_name or self.device_class or self.short_type()
@@ -396,7 +396,7 @@ class Bridge(object):
         entity = self.get_entity_by_id(entity_id)
         if entity:
             name = entity.registry_entry.name
-            if 'name' not in event.data.get('changes',{}).keys():
+            if 'name' not in event.data.get('changes', {}).keys():
                 return
             kv = {'ha_name': name}
             body = {'device': entity.address, 'map': kv}

@@ -58,7 +58,7 @@ class Hygrometer(XAALSensorEntity):
 
 class Barometer(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.PRESSURE
-    _attr_native_unit_of_measurement = const.PRESSURE_HPA
+    _attr_native_unit_of_measurement = const.UnitOfPressure.HPA
     _xaal_attribute = 'pressure'
 
 
@@ -71,7 +71,7 @@ class Battery(XAALSensorEntity):
 
 class PowerMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
-    _attr_native_unit_of_measurement = const.POWER_WATT
+    _attr_native_unit_of_measurement = const.UnitOfPower.WATT
     _xaal_attribute = 'power'
 
 
