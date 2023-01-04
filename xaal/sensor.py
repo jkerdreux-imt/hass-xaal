@@ -65,7 +65,7 @@ class Barometer(XAALSensorEntity):
 class Battery(XAALSensorEntity):
     _attr_state_class = None
     _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_unit_of_measurement = const.PERCENTAGE
+    _attr_native_unit_of_measurement = const.PERCENTAGE
     _xaal_attribute = 'level'
 
 
