@@ -187,8 +187,8 @@ class Bridge(object):
         self._eng.on_start(self.on_start)
         self._eng.on_stop(self.on_stop)
         self._eng.start()
-        self._entities = {}
-        self._factories = []
+        self._entities: Dict[bindings.UUID, List[XAALEntity]] = {}
+        self._factories: List[EntityFactory] = []
         hass.bus.async_listen(EVENT_DEVICE_REGISTRY_UPDATED, self.device_registry_updated)
         hass.bus.async_listen(EVENT_ENTITY_REGISTRY_UPDATED, self.entity_registry_updated)
 
@@ -292,7 +292,7 @@ class Bridge(object):
         if cnt == 0:
             self.warm_once(f"Unable to find entity for {dev.address} {dev.dev_type} ")
 
-    def add_entities(self, addr: bindings.UUID, entities: list[XAALEntity]) -> None:
+    def add_entities(self, addr: bindings.UUID, entities: List[XAALEntity]) -> None:
         """register some entities (called from factories)"""
         _LOGGER.debug(f"new Entities: {addr} {entities}")
         self._entities.update({addr: entities})
@@ -308,7 +308,7 @@ class Bridge(object):
             # and old entity
             _LOGGER.warn(f"Unknow entity w/ addr {addr}")
 
-    def get_entities(self, addr: bindings.UUID) -> list[XAALEntity] | None:
+    def get_entities(self, addr: bindings.UUID) -> List[XAALEntity] | None:
         """ return entities for a given xAAL address"""
         return self._entities.get(addr)
 
@@ -332,7 +332,7 @@ class Bridge(object):
         else:
             return "dev:" + str(device.address)
 
-    def ident_to_address(self, ident: str) -> list[bindings.UUID]:
+    def ident_to_address(self, ident: str) -> List[bindings.UUID]:
         tmp = ident.split(':')
         addr = tools.get_uuid(tmp[1])
         # is it a xAAL device, if so remove it's address
