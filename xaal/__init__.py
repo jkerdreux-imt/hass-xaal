@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     bridge = Bridge(hass, db_server)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = bridge
 
-    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # await bridge.wait_is_ready()
     return True
 
