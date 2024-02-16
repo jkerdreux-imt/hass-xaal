@@ -3,7 +3,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.switch import SwitchEntity, DEVICE_CLASS_OUTLET
+from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
 
 from .bridge import XAALEntity, async_setup_factory
 
@@ -19,7 +19,7 @@ async def async_setup_entry(hass: HomeAssistant,
 
 
 class PowerRelay(XAALEntity, SwitchEntity):
-    _attr_device_class = DEVICE_CLASS_OUTLET
+    _attr_device_class = SwitchDeviceClass.OUTLET
 
     @property
     def is_on(self) -> bool | None:

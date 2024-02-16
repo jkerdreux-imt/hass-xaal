@@ -4,7 +4,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, STATE_CLASS_MEASUREMENT
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant import const
 from homeassistant import util
 
@@ -36,7 +36,7 @@ async def async_setup_entry(hass: HomeAssistant,
 
 
 class XAALSensorEntity(XAALEntity, SensorEntity):
-    _attr_state_class = STATE_CLASS_MEASUREMENT
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> Any:
@@ -77,13 +77,13 @@ class PowerMeter(XAALSensorEntity):
 
 class CurrentMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.CURRENT
-    _attr_native_unit_of_measurement = const.ELECTRIC_CURRENT_AMPERE
+    _attr_native_unit_of_measurement = const.UnitOfElectricCurrent.AMPERE
     _xaal_attribute = 'current'
 
 
 class VoltMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.VOLTAGE
-    _attr_native_unit_of_measurement = const.ELECTRIC_POTENTIAL_VOLT
+    _attr_native_unit_of_measurement = const.UnitOfElectricPotential.VOLT
     _xaal_attribute = 'voltage'
 
 
