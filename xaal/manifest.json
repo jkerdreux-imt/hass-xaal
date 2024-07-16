@@ -7,7 +7,7 @@
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
-  "dependencies": ["xaal.lib", "xaal.monitor", "xaal.schemas"],
+  "dependencies": [],
   "codeowners": ["@jkerdreux-imt"],
   "iot_class": "local_push",
   "version": "0.1.0"
