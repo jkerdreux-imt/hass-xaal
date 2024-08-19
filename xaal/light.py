@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant,
 class Lamp(XAALEntity, LightEntity):
 
     @property
-    def supported_color_modes(self) -> str:
+    def supported_color_modes(self) -> ColorMode | set[str] | None:
         dev_type = self._dev.dev_type
         if dev_type in ['lamp.color']:
             return {ColorMode.BRIGHTNESS, ColorMode.HS, ColorMode.COLOR_TEMP}
@@ -85,4 +85,3 @@ class Lamp(XAALEntity, LightEntity):
 
     def turn_off(self, **kwargs) -> None:
         self.send_request('turn_off')
-

@@ -16,7 +16,6 @@ from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity_registry import EVENT_ENTITY_REGISTRY_UPDATED
 
 from xaal.lib import AsyncEngine, tools, Device, Message, bindings
-from xaal.schemas import devices as schemas
 from xaal.monitor import Monitor, Notification
 from xaal.monitor.monitor import Device as MonitorDevice
 
@@ -220,8 +219,8 @@ class Bridge(object):
     #####################################################
     def setup_device(self) -> Device:
         """setup a new device need by the Monitor"""
-        dev = schemas.hmi()
-        dev.dev_type = 'hmi.hass'
+        dev = Device('hmi.hass')
+        dev.address = tools.get_random_uuid()
         dev.vendor_id = 'IMT Atlantique'
         dev.product_id = 'xAAL to HASS Brigde'
         # never use this terrible hack to gain access to brigde throught aioconsole
@@ -410,4 +409,3 @@ class Bridge(object):
     @functools.lru_cache(maxsize=128)
     def warm_once(self, msg: str):
         _LOGGER.warning(msg)
-
