@@ -24,9 +24,11 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 UNSUPPORTED_TYPES = ['cli', 'hmi', 'logger']
 
-UPDATE_NOTIFICATIONS = [Notification.attribute_change,
-                        Notification.description_change,
-                        Notification.metadata_change]
+UPDATE_NOTIFICATIONS = [
+    Notification.attribute_change,
+    Notification.description_change,
+    Notification.metadata_change,
+]
 
 
 class XAALEntity(Entity):
@@ -43,7 +45,7 @@ class XAALEntity(Entity):
     # Life cycle
     #####################################################
     def setup(self):
-        """ Use setup to tweak a entity at creation """
+        """Use setup to tweak a entity at creation"""
         pass
 
     async def async_added_to_hass(self) -> None:
@@ -58,7 +60,7 @@ class XAALEntity(Entity):
 
     def fix_device(self, device: MonitorDevice) -> None:
         """The xAAL device is back after an auto-wash, so we need to switch,
-           to the new MonitorDevice.
+        to the new MonitorDevice.
         """
         self._dev = device
         self._attr_available = True
@@ -78,7 +80,7 @@ class XAALEntity(Entity):
             "manufacturer": dev.description.get("vendor_id"),
             "sw_version": dev.description.get("version"),
             "hw_version": dev.description.get("hw_id"),
-            "suggested_area": dev.db.get("location")
+            "suggested_area": dev.db.get("location"),
         }
 
     #####################################################
@@ -86,10 +88,14 @@ class XAALEntity(Entity):
     #####################################################
     def send_request(self, action: str, body: Dict[str, Any] | None = None) -> None:
         _LOGGER.debug(f"{self} {action} {body}")
-        self._bridge.send_request([self._dev.address, ], action, body)
+        self._bridge.send_request(
+            [self._dev.address],
+            action,
+            body,
+        )
 
     def get_attribute(self, name: str, default: Dict[str, Any] = None) -> Any:
-        """ return a attribute for xAAL device"""
+        """return a attribute for xAAL device"""
         return self._dev.attributes.get(name, default)
 
     @property
@@ -100,7 +106,7 @@ class XAALEntity(Entity):
     # Entity properties
     #####################################################
     def short_type(self) -> str:
-        """ return a fake device class for entity that doesn't have one """
+        """return a fake device class for entity that doesn't have one"""
         # this apply for light, button
         # NOTE: I don't know why some HASS entities don't have a device class
         return self._dev.dev_type.split('.')[0]
@@ -140,7 +146,7 @@ class EntityFactory(object):
         self._binding = binding
 
     def build_entities(self, device: MonitorDevice) -> bool:
-        """ return True if this factory managed to build some entities"""
+        """return True if this factory managed to build some entities"""
         result = []
         for b_type in self._binding.keys():
             if device.dev_type.startswith(b_type):
@@ -154,11 +160,12 @@ class EntityFactory(object):
         return False
 
 
-def async_setup_factory(hass: HomeAssistant,
-                        config_entry: ConfigEntry,
-                        async_add_entities: AddEntitiesCallback,
-                        binding: dict) -> None:
-
+def async_setup_factory(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    binding: dict,
+) -> None:
     bridge: Bridge = hass.data[DOMAIN][config_entry.entry_id]
     factory = EntityFactory(bridge, async_add_entities, binding)
     bridge.add_factory(factory)
@@ -169,6 +176,9 @@ def async_setup_factory(hass: HomeAssistant,
 
 
 def filter_msg(msg: Message) -> bool:
+    if msg.dev_type is None:
+        # This should not happen
+        return False
     m_type = msg.dev_type.split('.')[0]
     if m_type in UNSUPPORTED_TYPES:
         return False
@@ -176,7 +186,6 @@ def filter_msg(msg: Message) -> bool:
 
 
 class Bridge(object):
-
     def __init__(self, hass: HomeAssistant, db_server) -> None:
         """Init xAAL bridge."""
         self.hass = hass
@@ -207,7 +216,7 @@ class Bridge(object):
         return self._mon.boot_finished
 
     async def wait_is_ready(self) -> bool:
-        """Wait the monitor to received all devices infos """
+        """Wait the monitor to received all devices infos"""
         while 1:
             if self._mon.boot_finished:
                 return True
@@ -233,7 +242,8 @@ class Bridge(object):
         self._eng.send_request(self._dev, targets, action, body)
 
     def ha_update_db(self, body: dict):
-        self.send_request([self._mon.db_server], 'update_keys_values', body)
+        if self._mon.db_server:
+            self.send_request([self._mon.db_server], 'update_keys_values', body)
 
     #####################################################
     # xAAL Monitor events & callbacks
@@ -305,10 +315,10 @@ class Bridge(object):
         except KeyError:
             # device already auto-washed or
             # and old entity
-            _LOGGER.warn(f"Unknow entity w/ addr {addr}")
+            _LOGGER.warning(f"Unknow entity w/ addr {addr}")
 
     def get_entities(self, addr: bindings.UUID) -> List[XAALEntity] | None:
-        """ return entities for a given xAAL address"""
+        """return entities for a given xAAL address"""
         return self._entities.get(addr)
 
     def get_entity_by_id(self, entity_id: str) -> XAALEntity | None:
@@ -342,7 +352,7 @@ class Bridge(object):
             return [dev.address for dev in self._mon.devices.get_with_group(addr)]
 
     def ha_remove_device(self, ident: str) -> None:
-        """ User asked to remove an HA device, we need to find out the entites """
+        """User asked to remove an HA device, we need to find out the entites"""
         for addr in self.ident_to_address(ident):
             self.remove_entities(addr)
 
@@ -350,7 +360,7 @@ class Bridge(object):
     # Factories
     #####################################################
     def add_factory(self, factory: EntityFactory):
-        """ register a new platform factory"""
+        """register a new platform factory"""
         self._factories.append(factory)
 
     def remove_factory(self, factory: EntityFactory):
