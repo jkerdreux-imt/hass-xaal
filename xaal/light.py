@@ -1,18 +1,24 @@
 import logging
 
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP_KELVIN,
+    ATTR_HS_COLOR,
+    ColorMode,
+    LightEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP_KELVIN
 
 from .bridge import XAALEntity, async_setup_factory
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant,
-                            config_entry: ConfigEntry,
-                            async_add_entities: AddEntitiesCallback) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
 
     binding = {'lamp.': [Lamp]}
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
@@ -47,7 +53,7 @@ class Lamp(XAALEntity, LightEntity):
     def hs_color(self) -> tuple[float, float] | None:
         hsv = self.get_attribute('hsv')
         if hsv:
-            return (hsv[0], hsv[1]*100)
+            return (hsv[0], hsv[1] * 100)
 
     @property
     def color_temp_kelvin(self) -> int | None:
