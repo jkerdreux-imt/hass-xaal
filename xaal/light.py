@@ -25,14 +25,14 @@ async def async_setup_entry(
 
 
 class Lamp(XAALEntity, LightEntity):
-
     @property
     def supported_color_modes(self) -> ColorMode | set[str] | None:
         dev_type = self._dev.dev_type
         if dev_type in ['lamp.color']:
-            return {ColorMode.BRIGHTNESS, ColorMode.HS, ColorMode.COLOR_TEMP}
+            return {ColorMode.HS, ColorMode.COLOR_TEMP}
         if dev_type in ['lamp.dimmer']:
             return {ColorMode.BRIGHTNESS}
+        return {ColorMode.ONOFF}
 
     @property
     def color_mode(self) -> ColorMode | str | None:
@@ -41,8 +41,19 @@ class Lamp(XAALEntity, LightEntity):
             return ColorMode.COLOR_TEMP
         elif mode == 'color':
             return ColorMode.HS
-        # FIXME: xAAL don't have this kind of lamp
-        return ColorMode.BRIGHTNESS
+        return ColorMode.ONOFF
+
+    @property
+    def min_color_temp_kelvin(self) -> int | None:
+        if ColorMode.COLOR_TEMP in self.supported_color_modes:
+            return 2000
+        return None
+
+    @property
+    def max_color_temp_kelvin(self) -> int | None:
+        if ColorMode.COLOR_TEMP in self.supported_color_modes:
+            return 6536
+        return None
 
     @property
     def brightness(self) -> int | None:
