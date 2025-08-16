@@ -12,25 +12,28 @@ from .bridge import XAALEntity, async_setup_factory
 from .const import XAAL_TTS_SCHEMA
 
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant,
-                            config_entry: ConfigEntry,
-                            async_add_entities: AddEntitiesCallback) -> None:
-    binding = {'thermometer.'     : [Thermometer],
-               'hygrometer.'      : [Hygrometer],
-               'barometer.'       : [Barometer],
-               'battery.'         : [Battery],
-               'powermeter.full'  : [PowerMeter, CurrentMeter, VoltMeter],
-               'powermeter.'      : [PowerMeter],
-               'wifimeter.'       : [WifiMeter],
-               'luxmeter.'        : [LuxMeter],
-               'co2meter.'        : [CO2Meter],
-               'soundmeter.'      : [SoundMeter],
-               'gateway.'         : [Gateway],
-               'tts.'             : [TTS], }
+async def async_setup_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    binding = {
+        'thermometer.': [Thermometer],
+        'hygrometer.': [Hygrometer],
+        'barometer.': [Barometer],
+        'battery.': [Battery],
+        'powermeter.full': [PowerMeter, CurrentMeter, VoltMeter],
+        'powermeter.': [PowerMeter],
+        'voltmeter.': [VoltMeter],
+        'wifimeter.': [WifiMeter],
+        'luxmeter.': [LuxMeter],
+        'co2meter.': [CO2Meter],
+        'soundmeter.': [SoundMeter],
+        'linkquality.': [LinkQualityMeter],
+        'gateway.': [Gateway],
+        'tts.': [TTS],
+    }
 
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
 
@@ -113,6 +116,14 @@ class SoundMeter(XAALSensorEntity):
     _attr_icon: str | None = "mdi:music-circle-outline"
 
 
+class LinkQualityMeter(XAALSensorEntity):
+    # This device doesn't have device class because, signal strength is db/dbm
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = const.PERCENTAGE
+    _attr_device_class = None
+    _xaal_attribute = 'level'
+
+
 class Gateway(XAALSensorEntity):
     _attr_native_unit_of_measurement = "embedded"
     _attr_icon: str | None = "mdi:swap-horizontal"
@@ -141,4 +152,3 @@ class TTS(XAALEntity):
     @property
     def name(self) -> str | None:
         return self._dev.description.get('info', 'tts')
-
