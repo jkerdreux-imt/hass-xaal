@@ -23,7 +23,7 @@ async def async_setup_entry(
         'hygrometer.': [Hygrometer],
         'barometer.': [Barometer],
         'battery.': [Battery],
-        'powermeter.full': [PowerMeter, CurrentMeter, VoltMeter],
+        'powermeter.extended': [PowerMeter, CurrentMeter, VoltMeter],
         'powermeter.': [PowerMeter],
         'voltmeter.': [VoltMeter],
         'wifimeter.': [WifiMeter],
