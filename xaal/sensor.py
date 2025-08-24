@@ -31,7 +31,7 @@ async def async_setup_entry(
         'co2meter.': [CO2Meter],
         'soundmeter.': [SoundMeter],
         'linkquality.': [LinkQualityMeter],
-        'gateway.': [Gateway],
+        'gateway.': [GatewayEmbedded, GatewayInactive],
         'tts.': [TTS],
     }
 
@@ -124,18 +124,48 @@ class LinkQualityMeter(XAALSensorEntity):
     _xaal_attribute = 'level'
 
 
-class Gateway(XAALSensorEntity):
-    _attr_native_unit_of_measurement = "embedded"
-    _attr_icon: str | None = "mdi:swap-horizontal"
+# class Gateway(XAALSensorEntity):
+#     _attr_native_unit_of_measurement = "embedded"
+#     _attr_icon: str | None = "mdi:swap-horizontal"
+
+#     @property
+#     def native_value(self) -> Any:
+#         embs = self.get_attribute("embedded")
+#         return len(embs) if embs else 0
+
+#     @property
+#     def name(self) -> str | None:
+#         return self._dev.description.get('product_id', 'gateway')
+
+
+class GatewayEmbedded(XAALSensorEntity):
+    _attr_icon = "mdi:swap-horizontal"
+    _attr_native_unit_of_measurement = 'devices'
+    _xaal_attribute = 'embedded'
 
     @property
-    def native_value(self) -> Any:
-        embs = self.get_attribute("embedded")
+    def native_value(self) -> int:
+        embs = self.get_attribute('embedded')
         return len(embs) if embs else 0
 
     @property
     def name(self) -> str | None:
-        return self._dev.description.get('product_id', 'gateway')
+        return f"{self._dev.description.get('product_id', 'gateway')} embedded"
+
+
+class GatewayInactive(XAALSensorEntity):
+    _attr_icon = "mdi:alert-circle-outline"
+    _attr_native_unit_of_measurement = 'devices'
+    _xaal_attribute = 'inactive'
+
+    @property
+    def native_value(self) -> int:
+        inactives = self.get_attribute('inactive')
+        return len(inactives) if inactives else 0
+
+    @property
+    def name(self) -> str | None:
+        return f"{self._dev.description.get('product_id', 'gateway')} inactive"
 
 
 class TTS(XAALEntity):
