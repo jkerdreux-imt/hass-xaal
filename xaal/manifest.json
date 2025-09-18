@@ -3,12 +3,16 @@
   "name": "xAAL",
   "config_flow": true,
   "documentation": "https://recherche.imt-atlantique.fr/xaal/",
-  "requirements": [],
+  "requirements": [
+    "xaal.monitor"
+  ],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
   "dependencies": [],
-  "codeowners": ["@jkerdreux-imt"],
+  "codeowners": [
+    "@jkerdreux-imt"
+  ],
   "iot_class": "local_push",
   "version": "0.1.0"
 }
