@@ -1,8 +1,10 @@
 {
   "domain": "xaal",
   "name": "xAAL",
+  "description": "This project integrates the xAAL protocol into Home Assistant, allowing you to control and monitor xAAL-compatible smart devices (lights, sensors, shutters, etc.) directly from the Home Assistant interface.",
   "config_flow": true,
-  "documentation": "https://recherche.imt-atlantique.fr/xaal/",
+  "documentation": "https://github.com/jkerdreux-imt/hass-xaal/blob/main/README.md",
+  "issue_tracker": "https://github.com/jkerdreux-imt/hass-xaal/issues",
   "requirements": [
     "xaal.monitor"
   ],
