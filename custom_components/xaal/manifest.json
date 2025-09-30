@@ -1,19 +1,19 @@
 {
   "domain": "xaal",
   "name": "xAAL",
+  "codeowners": [
+    "@jkerdreux-imt"
+  ],
   "config_flow": true,
+  "dependencies": [],
   "documentation": "https://github.com/jkerdreux-imt/hass-xaal/blob/main/README.md",
+  "homekit": {},
+  "iot_class": "local_push",
   "issue_tracker": "https://github.com/jkerdreux-imt/hass-xaal/issues",
   "requirements": [
     "xaal.monitor"
   ],
   "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "dependencies": [],
-  "codeowners": [
-    "@jkerdreux-imt"
-  ],
-  "iot_class": "local_push",
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "zeroconf": []
 }
