@@ -11,12 +11,13 @@ xAAL is an open protocol for home automation, designed for interoperability betw
 - A working Home Assistant installation
 - An accessible xAAL metadata server on your network ([metadata server documentation](https://gitlab.imt-atlantique.fr/xaal/code/python/-/tree/main/core/metadb))
   - Only the UUID of the metadata server is required for configuration.
-(Home Assistant will automatically install the required Python dependencies, including `xaal.monitor`.)
 
 ## Installation
 
 1. Copy the `xaal/` folder into the `custom_components/` directory of your Home Assistant installation.
 2. Restart Home Assistant.
+
+Home Assistant will automatically install the required Python dependencies (including `xaal.monitor`).
 
 ## Configuration
 
