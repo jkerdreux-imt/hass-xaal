@@ -148,12 +148,20 @@ class EntityFactory(object):
         for b_type in self._binding.keys():
             if device.dev_type.startswith(b_type):
                 for k in self._binding[b_type]:
-                    entity = k(device, self._bridge)
-                    result.append(entity)
+                    required_attr = getattr(k, '_xaal_attribute', None)
+                    if required_attr is None:  # No attribute specified in Entity
+                        entity = k(device, self._bridge)
+                        result.append(entity)
+                    else:  # Entity set an attribute, so check if the device support it
+                        unsupported = device.description.get('unsupported_attributes', [])
+                        if required_attr not in unsupported:
+                            entity = k(device, self._bridge)
+                            result.append(entity)
                 # an factory can match only one dev_type
-                self._async_add_entitites(result)
-                self._bridge.add_entities(device.address, result)
-                return True
+                if result:  # Only add if we have entities
+                    self._async_add_entitites(result)
+                    self._bridge.add_entities(device.address, result)
+                    return True
         return False
 
 

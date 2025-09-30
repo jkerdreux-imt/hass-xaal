@@ -23,9 +23,9 @@ async def async_setup_entry(
         'hygrometer.': [Hygrometer],
         'barometer.': [Barometer],
         'battery.': [Battery],
-        'powermeter.extended': [PowerMeter, CurrentMeter, VoltMeter],
+        'powermeter.extended': [PowerMeter, EnergyMeter, CurrentMeter, VoltMeter],
         'ampmeter.': [CurrentMeter],
-        'powermeter.': [PowerMeter],
+        'powermeter.': [PowerMeter, EnergyMeter],
         'voltmeter.': [VoltMeter],
         'wifimeter.': [WifiMeter],
         'luxmeter.': [LuxMeter],
@@ -77,6 +77,13 @@ class PowerMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = const.UnitOfPower.WATT
     _xaal_attribute = 'power'
+
+
+class EnergyMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_native_unit_of_measurement = const.UnitOfEnergy.KILO_WATT_HOUR
+    _xaal_attribute = 'energy'
 
 
 class CurrentMeter(XAALSensorEntity):
