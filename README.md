@@ -9,7 +9,6 @@ xAAL is an open protocol for home automation, designed for interoperability betw
 ## Prerequisites
 
 - A working Home Assistant installation
-- An accessible xAAL server on your network
 - An accessible xAAL metadata server on your network ([metadata server documentation](https://gitlab.imt-atlantique.fr/xaal/code/python/-/tree/main/core/metadb))
   - Only the UUID of the metadata server is required for configuration.
 (Home Assistant will automatically install the required Python dependencies, including `xaal.monitor`.)
