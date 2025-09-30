@@ -24,6 +24,7 @@ async def async_setup_entry(
         'barometer.': [Barometer],
         'battery.': [Battery],
         'powermeter.extended': [PowerMeter, CurrentMeter, VoltMeter],
+        'ampmeter.': [CurrentMeter],
         'powermeter.': [PowerMeter],
         'voltmeter.': [VoltMeter],
         'wifimeter.': [WifiMeter],
