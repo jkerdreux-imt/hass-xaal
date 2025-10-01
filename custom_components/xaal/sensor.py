@@ -34,6 +34,7 @@ async def async_setup_entry(
         'linkquality.': [LinkQualityMeter],
         'gateway.': [GatewayEmbedded, GatewayInactive],
         'tts.': [TTS],
+        'apparentpowermeter.': [ApparentPowerMeter],
     }
 
     return async_setup_factory(hass, config_entry, async_add_entities, binding)
@@ -96,6 +97,12 @@ class VoltMeter(XAALSensorEntity):
     _attr_device_class = SensorDeviceClass.VOLTAGE
     _attr_native_unit_of_measurement = const.UnitOfElectricPotential.VOLT
     _xaal_attribute = 'voltage'
+
+
+class ApparentPowerMeter(XAALSensorEntity):
+    _attr_device_class = SensorDeviceClass.APPARENT_POWER
+    _attr_native_unit_of_measurement = const.UnitOfApparentPower.VOLT_AMPERE
+    _xaal_attribute = 'power'
 
 
 class WifiMeter(XAALSensorEntity):
