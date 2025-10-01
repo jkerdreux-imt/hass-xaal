@@ -1,4 +1,4 @@
-notify.notify:
+notify:
   name: Send a notification message
   description: Sends a text message to an xAAL notifier device
   fields:
