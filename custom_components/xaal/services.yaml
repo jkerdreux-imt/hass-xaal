@@ -1,0 +1,11 @@
+notify.notify:
+  name: Send a notification message
+  description: Sends a text message to an xAAL notifier device
+  fields:
+    message:
+      name: Message
+      description: The text that will be push to the device (ie Alexa)
+      required: true
+      example: "Honey, it's time to sleep."
+      selector:
+        text:
