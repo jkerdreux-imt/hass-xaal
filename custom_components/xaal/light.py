@@ -29,7 +29,9 @@ class Lamp(XAALEntity, LightEntity):
     def supported_color_modes(self) -> ColorMode | set[str] | None:
         dev_type = self._dev.dev_type
         if dev_type in ['lamp.color']:
-            return {ColorMode.HS, ColorMode.COLOR_TEMP}
+            if self._supports_white_temperature():
+                return {ColorMode.HS, ColorMode.COLOR_TEMP}
+            return {ColorMode.HS}
         if dev_type in ['lamp.dimmer']:
             if self._supports_white_temperature():
                 return {ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP}
@@ -55,7 +57,7 @@ class Lamp(XAALEntity, LightEntity):
                 return ColorMode.COLOR_TEMP
             if mode == 'color':
                 return ColorMode.HS
-            return ColorMode.COLOR_TEMP  # fallback
+            return ColorMode.HS if not self._supports_white_temperature() else ColorMode.COLOR_TEMP
 
         if dev_type == 'lamp.dimmer':
             if mode == 'white' and self._supports_white_temperature():
