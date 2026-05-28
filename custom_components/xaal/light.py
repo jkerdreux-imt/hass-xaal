@@ -34,7 +34,7 @@ class Lamp(XAALEntity, LightEntity):
             return {ColorMode.HS}
         if dev_type in ['lamp.dimmer']:
             if self._supports_white_temperature():
-                return {ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP}
+                return {ColorMode.COLOR_TEMP}
             return {ColorMode.BRIGHTNESS}
         return {ColorMode.ONOFF}
 
