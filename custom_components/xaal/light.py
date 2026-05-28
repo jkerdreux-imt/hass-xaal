@@ -31,16 +31,37 @@ class Lamp(XAALEntity, LightEntity):
         if dev_type in ['lamp.color']:
             return {ColorMode.HS, ColorMode.COLOR_TEMP}
         if dev_type in ['lamp.dimmer']:
+            if self._supports_white_temperature():
+                return {ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP}
             return {ColorMode.BRIGHTNESS}
         return {ColorMode.ONOFF}
 
+    def _supports_white_temperature(self) -> bool:
+        desc = self._dev.description
+        unsupported_methods = desc.get('unsupported_methods', [])
+        unsupported_attributes = desc.get('unsupported_attributes', [])
+        return (
+            'set_white_temperature' not in unsupported_methods
+            and 'white_temperature' not in unsupported_attributes
+        )
+
     @property
     def color_mode(self) -> ColorMode | str | None:
+        dev_type = self._dev.dev_type
         mode = self.get_attribute('mode')
-        if mode == 'white':
-            return ColorMode.COLOR_TEMP
-        elif mode == 'color':
-            return ColorMode.HS
+
+        if dev_type == 'lamp.color':
+            if mode == 'white':
+                return ColorMode.COLOR_TEMP
+            if mode == 'color':
+                return ColorMode.HS
+            return ColorMode.COLOR_TEMP  # fallback
+
+        if dev_type == 'lamp.dimmer':
+            if mode == 'white' and self._supports_white_temperature():
+                return ColorMode.COLOR_TEMP
+            return ColorMode.BRIGHTNESS
+
         return ColorMode.ONOFF
 
     @property
